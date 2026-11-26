@@ -317,6 +317,7 @@ export async function saveReviewAction(fd: FormData) {
       text: z.string().trim().min(1).max(3000),
       review_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().or(z.literal("").transform(() => null)),
       source_url: z.string().trim().max(500).refine((s) => !s || /^https:\/\//.test(s)).nullable(),
+      visited_label: z.string().trim().max(60).nullable(),
       verified: z.boolean(),
       publication_authorized: z.boolean(),
       published: z.boolean(),
@@ -324,6 +325,7 @@ export async function saveReviewAction(fd: FormData) {
     .parse({
       author_name: fd.get("author_name"), rating: fd.get("rating"), text: fd.get("text"), review_date: fd.get("review_date") ?? "",
       source_url: String(fd.get("source_url") ?? "") || null,
+      visited_label: String(fd.get("visited_label") ?? "").trim() || null,
       verified: fd.get("verified") === "on", publication_authorized: fd.get("publication_authorized") === "on", published: fd.get("published") === "on",
     });
   // Garde-fou : publication impossible sans vérification ET autorisation

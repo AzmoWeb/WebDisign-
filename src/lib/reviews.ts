@@ -1,6 +1,7 @@
 import "server-only";
 import { supabasePublic } from "./supabase/public";
 import type { SiteSettings } from "./types";
+import { VERIFIED_GOOGLE_REVIEWS } from "./reviews-data";
 
 export type DisplayReview = {
   author: string;
@@ -10,6 +11,7 @@ export type DisplayReview = {
   text: string;
   date: string | null;
   relativeDate?: string | null;
+  visited?: string | null;
 };
 
 export type ReviewsData = {
@@ -79,17 +81,27 @@ export async function getReviews(settings: SiteSettings): Promise<ReviewsData> {
   if (sb) {
     const { data } = await sb
       .from("reviews")
-      .select("author_name, rating, text, review_date")
+      .select("author_name, rating, text, review_date, visited_label")
       .eq("published", true)
       .eq("verified", true)
       .eq("publication_authorized", true)
-      .order("review_date", { ascending: false })
+      .order("created_at", { ascending: true })
       .limit(12);
-    const reviews = (data ?? []).map((r: any) => ({ author: r.author_name, rating: r.rating, text: r.text, date: r.review_date }));
+    const reviews = (data ?? []).map((r: any) => ({ author: r.author_name, rating: r.rating, text: r.text, date: r.review_date, visited: r.visited_label }));
     const { manualRating, manualCount, manualCheckedAt } = settings.reviews;
     if (reviews.length || manualRating != null) {
       return { ...base, source: "manual", rating: manualRating, count: manualCount, checkedAt: manualCheckedAt, reviews };
     }
+    return { ...base, source: "none", rating: null, count: null, checkedAt: null, reviews: [] };
   }
-  return { ...base, source: "none", rating: null, count: null, checkedAt: null, reviews: [] };
+  // Base non connectée : avis réels relevés sur la fiche Google (voir reviews-data.ts)
+  const { manualRating, manualCount, manualCheckedAt } = settings.reviews;
+  return {
+    ...base,
+    source: "manual",
+    rating: manualRating,
+    count: manualCount,
+    checkedAt: manualCheckedAt,
+    reviews: VERIFIED_GOOGLE_REVIEWS.map((r) => ({ author: r.author, rating: r.rating, text: r.text, date: null, visited: r.visited })),
+  };
 }

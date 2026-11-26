@@ -45,7 +45,7 @@ export function GoogleReviews({ data }: { data: ReviewsData }) {
         <div className="lg:col-span-8">
           {data.reviews.length > 0 ? (
             <ul className="grid gap-px bg-line sm:grid-cols-2">
-              {data.reviews.slice(0, 4).map((r, i) => (
+              {data.reviews.slice(0, 6).map((r, i) => (
                 <li key={i} className="flex flex-col bg-ivory p-7 md:p-9">
                   <Stars value={r.rating} />
                   <blockquote className="mt-5 flex-1 text-[0.98rem] leading-relaxed text-graphite">
@@ -60,7 +60,7 @@ export function GoogleReviews({ data }: { data: ReviewsData }) {
                         <span className="font-medium">{r.author}</span>
                       )}
                       <span className="block text-xs text-mist">
-                        Avis Google{r.relativeDate ? ` · ${r.relativeDate}` : r.date ? ` · ${dateFmt.format(new Date(r.date))}` : ""}
+                        Avis Google{r.relativeDate ? ` · ${r.relativeDate}` : r.visited ? ` · ${r.visited}` : r.date ? ` · ${dateFmt.format(new Date(r.date))}` : ""}
                       </span>
                     </span>
                   </footer>
@@ -75,7 +75,7 @@ export function GoogleReviews({ data }: { data: ReviewsData }) {
             </div>
           )}
           {data.source === "google_api" && <p className="mt-4 text-right text-xs text-mist">Avis fournis par Google</p>}
-          {data.source === "manual" && data.reviews.length > 0 && <p className="mt-4 text-right text-xs text-mist">Avis publiés sur Google, reproduits avec l&apos;autorisation de leurs auteurs</p>}
+          {data.source === "manual" && data.reviews.length > 0 && <p className="mt-4 text-right text-xs text-mist">Avis publiés sur notre fiche Google, reproduits à l&apos;identique</p>}
         </div>
       </div>
     </section>

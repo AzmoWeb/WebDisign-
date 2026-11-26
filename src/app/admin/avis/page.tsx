@@ -8,7 +8,7 @@ import { deleteReviewAction, saveReviewAction } from "../actions";
 export const metadata = { title: "Avis Google" };
 export const dynamic = "force-dynamic";
 
-type R = { id: string; author_name: string; rating: number; text: string; review_date: string | null; source_url: string | null; verified: boolean; publication_authorized: boolean; published: boolean };
+type R = { id: string; author_name: string; rating: number; text: string; review_date: string | null; source_url: string | null; visited_label: string | null; verified: boolean; publication_authorized: boolean; published: boolean };
 
 function ReviewForm({ r }: { r?: R }) {
   return (
@@ -18,7 +18,8 @@ function ReviewForm({ r }: { r?: R }) {
       <label className="sm:col-span-1"><span className="field-label">Note</span><select name="rating" defaultValue={r?.rating ?? 5} className="field min-h-10 py-2">{[5, 4, 3, 2, 1].map((n) => <option key={n}>{n}</option>)}</select></label>
       <label className="sm:col-span-2"><span className="field-label">Date de l&apos;avis</span><input type="date" name="review_date" defaultValue={r?.review_date ?? ""} className="field min-h-10 py-2" /></label>
       <label className="sm:col-span-6"><span className="field-label">Texte exact de l&apos;avis (ne pas modifier)</span><textarea name="text" defaultValue={r?.text} required rows={3} className="field" /></label>
-      <label className="sm:col-span-6"><span className="field-label">Lien vers l&apos;avis (facultatif)</span><input name="source_url" defaultValue={r?.source_url ?? ""} className="field min-h-10 py-2" /></label>
+      <label className="sm:col-span-3"><span className="field-label">Mention Google (ex. « Visité en juin 2026 »)</span><input name="visited_label" defaultValue={r?.visited_label ?? ""} maxLength={60} className="field min-h-10 py-2" /></label>
+      <label className="sm:col-span-3"><span className="field-label">Lien vers l&apos;avis (facultatif)</span><input name="source_url" defaultValue={r?.source_url ?? ""} className="field min-h-10 py-2" /></label>
       <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm sm:col-span-6">
         <label className="flex items-center gap-2"><input type="checkbox" name="verified" defaultChecked={r?.verified} className="accent-ink" /> Avis vérifié sur la fiche Google</label>
         <label className="flex items-center gap-2"><input type="checkbox" name="publication_authorized" defaultChecked={r?.publication_authorized} className="accent-ink" /> Reproduction autorisée</label>

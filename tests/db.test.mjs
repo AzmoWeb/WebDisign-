@@ -19,7 +19,7 @@ alter default privileges in schema public grant all on tables to anon, authentic
 alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
 alter default privileges in schema public grant execute on functions to anon, authenticated, service_role;
 `);
-for (const f of ["0001_schema.sql", "0002_seed_categories.sql"]) await db.exec(readFileSync(new URL(`../supabase/migrations/${f}`, import.meta.url), "utf8"));
+for (const f of ["0001_schema.sql", "0002_seed_categories.sql", "0003_google_reviews.sql"]) await db.exec(readFileSync(new URL(`../supabase/migrations/${f}`, import.meta.url), "utf8"));
 
 const q = async (sql, p) => (await db.query(sql, p)).rows;
 const as = async (role, uid, fn) => {
@@ -85,7 +85,9 @@ test("limitation de débit partagée", async () => {
 
 test("avis : seuls les avis vérifiés, autorisés et publiés sont publics", async () => {
   await q(`insert into reviews (author_name,rating,text,verified,publication_authorized,published) values ('X',5,'ok',true,false,true),('Y',5,'ok',true,true,true)`);
-  assert.deepEqual((await as("anon", null, () => q("select author_name from reviews"))).map((r) => r.author_name), ["Y"]);
+  const names = (await as("anon", null, () => q("select author_name from reviews"))).map((r) => r.author_name);
+  assert.ok(names.includes("Y") && !names.includes("X"));
+  assert.ok(names.includes("Laur3009"), "avis Google importés");
 });
 
 test("messages, journaux et événements Stripe sont privés", async () => {
