@@ -19,7 +19,7 @@ export default async function Page() {
       ) : (
         <p><Todo>tarifs de livraison par transporteur (à saisir dans l&apos;administration)</Todo></p>
       )}
-      <p>Zones desservies : <Todo>France métropolitaine ?</Todo> — Délai de préparation : <Todo>par exemple 1 à 2 jours ouvrés</Todo>.</p>
+      <p>Les commandes sont expédiées sous 24 h. Zones desservies : <Todo>France métropolitaine ?</Todo></p>
       <h2>Point relais</h2>
       <p>Pour une livraison en point relais, indiquez le point choisi lors de la commande. Vous êtes prévenu par le transporteur à l&apos;arrivée du colis et disposez d&apos;un délai fixé par celui-ci pour le retirer, muni d&apos;une pièce d&apos;identité.</p>
       <h2>Retrait en magasin</h2>

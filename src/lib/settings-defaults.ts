@@ -36,9 +36,9 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     // Transporteurs indiqués par la commerçante. Tarifs NON renseignés : chaque mode reste masqué
     // (et la commande en ligne fermée) tant que son prix n'est pas défini dans l'administration.
     methods: [
-      { id: "colissimo-domicile", carrier: "colissimo", type: "home", label: "Colissimo — livraison à domicile", enabled: true, priceCents: null, freeFromCents: null, delayText: null },
-      { id: "mondial-relay", carrier: "mondial_relay", type: "relay", label: "Mondial Relay — livraison en point relais", enabled: true, priceCents: null, freeFromCents: null, delayText: null },
-      { id: "colissimo-relais", carrier: "colissimo", type: "relay", label: "Colissimo — bureau de poste ou relais Pickup", enabled: false, priceCents: null, freeFromCents: null, delayText: null },
+      { id: "colissimo-domicile", carrier: "colissimo", type: "home", label: "Colissimo — livraison à domicile", enabled: true, priceCents: null, freeFromCents: null, delayText: "Expédié sous 24 h" },
+      { id: "mondial-relay", carrier: "mondial_relay", type: "relay", label: "Mondial Relay — livraison en point relais", enabled: true, priceCents: null, freeFromCents: null, delayText: "Expédié sous 24 h" },
+      { id: "colissimo-relais", carrier: "colissimo", type: "relay", label: "Colissimo — bureau de poste ou relais Pickup", enabled: false, priceCents: null, freeFromCents: null, delayText: "Expédié sous 24 h" },
     ],
     // Le retrait en magasin n'est proposé qu'après confirmation du commerçant.
     pickupEnabled: false,
