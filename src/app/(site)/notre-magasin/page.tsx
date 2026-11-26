@@ -47,7 +47,7 @@ export default async function StorePage() {
       <section className="container-site mt-24 grid gap-14 md:grid-cols-2" aria-label="Nos univers">
         {(["femme", "homme"] as const).map((g) => (
           <div key={g}>
-            <Link href={`/${g}`} className="group relative block aspect-[4/3] overflow-hidden bg-sand">
+            <Link href={`/${g}`} aria-label={`Voir les chaussures ${g}`} className="group relative block aspect-[4/3] overflow-hidden bg-sand">
               <CampaignScene scene={g} className="absolute inset-0 h-full w-full transition-transform duration-[1.6s] group-hover:scale-[1.04]" />
             </Link>
             <h2 className="display mt-8 text-[2rem]">Chaussures {g}</h2>

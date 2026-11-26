@@ -50,10 +50,10 @@ export function Footer({ settings }: { settings: SiteSettings }) {
         <FooterCol title="Boutique" links={[["Femme", "/femme"], ["Homme", "/homme"], ["Nouveautés", "/nouveautes"], ["Promotions", "/promotions"], ["Coups de cœur", "/coups-de-coeur"]]} />
         <FooterCol title="Aide" links={[["Contact", "/contact"], ["FAQ", "/faq"], ["Livraison", "/livraison"], ["Retours", "/retours"], ["Mon compte", "/compte"]]} />
         <div className="md:col-span-2">
-          <p className="label text-ivory/50">Horaires</p>
+          <p className="label text-ivory/60">Horaires</p>
           <div className="mt-5 text-sm text-ivory/80">
             {store.hours ? <HoursTable hours={store.hours} compact /> : <p className="text-ivory/60">Horaires communiqués prochainement. Contactez-nous au {store.phone}.</p>}
-            {store.hoursNote && <p className="mt-3 text-xs text-ivory/50">{store.hoursNote}</p>}
+            {store.hoursNote && <p className="mt-3 text-xs text-ivory/60">{store.hoursNote}</p>}
           </div>
         </div>
         <FooterCol title="Informations" links={[["Notre magasin", "/notre-magasin"], ["Mentions légales", "/mentions-legales"], ["Confidentialité", "/politique-de-confidentialite"], ["Cookies", "/politique-cookies"], ["CGV", "/cgv"]]}>
@@ -64,7 +64,7 @@ export function Footer({ settings }: { settings: SiteSettings }) {
       </div>
 
       <div className="border-t border-ivory/10">
-        <div className="container-site flex flex-col gap-2 py-6 text-xs text-ivory/45 sm:flex-row sm:justify-between">
+        <div className="container-site flex flex-col gap-2 py-6 text-xs text-ivory/60 sm:flex-row sm:justify-between">
           <p>© {new Date().getFullYear()} Aux Jolis Pas — Bar-sur-Seine (10)</p>
           <p>Paiements sécurisés par Stripe</p>
         </div>
@@ -76,7 +76,7 @@ export function Footer({ settings }: { settings: SiteSettings }) {
 function FooterCol({ title, links, children }: { title: string; links: [string, string][]; children?: React.ReactNode }) {
   return (
     <div className="md:col-span-2">
-      <p className="label text-ivory/50">{title}</p>
+      <p className="label text-ivory/60">{title}</p>
       <ul className="mt-5 space-y-3 text-sm text-ivory/80">
         {links.map(([l, h]) => (
           <li key={h}>

@@ -51,3 +51,12 @@ src/
 supabase/migrations/ schéma SQL, RLS, fonctions, stockage
 tests/               tests unitaires, base de données, parcours navigateur
 ```
+
+## État des tests (build de production, mode démonstration)
+
+- `npm test` : 16/16 (logique métier ; migrations, RLS, rôles, paiement, limitation de débit sur PostgreSQL embarqué)
+- `npm run test:e2e` : 13/13 parcours (cookies : bannière, refus, acceptation, personnalisation, retrait, changement de version — avec GA4/Meta factices pour vérifier le blocage réel ; filtres, recherche, fiche produit, panier ; mobile iPhone/Pixel sans débordement ; en-têtes de sécurité ; SEO)
+- Lighthouse (accueil, desktop) : performance 93 · accessibilité 100 · bonnes pratiques 100 · SEO 100. Les fiches de démonstration sont volontairement en `noindex`.
+- `npm audit` : 0 vulnérabilité
+
+Non testé ici faute de clés : paiement Stripe réel et webhook de bout en bout, envoi d'e-mails, API Google Places, base Supabase hébergée (le schéma et la RLS sont testés sur PostgreSQL embarqué). Procédure de vérification dans `docs/INSTALLATION.md` §8.

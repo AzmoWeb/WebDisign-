@@ -15,7 +15,7 @@ export function ProductCard({ product: p, priority }: { product: Product; priori
   const outOfStock = !p.variants.some((v) => v.stock > 0);
   return (
     <article className="group relative">
-      <Link href={`/produit/${p.slug}`} className="block" aria-label={`${p.name}${p.brand ? `, ${p.brand}` : ""}`}>
+      <Link href={`/produit/${p.slug}`} className="block" tabIndex={-1} aria-hidden="true">
         <div className="relative aspect-[4/5] overflow-hidden bg-sand">
           <ProductMedia
             url={first?.url}
@@ -26,11 +26,11 @@ export function ProductCard({ product: p, priority }: { product: Product; priori
             sizes="(min-width:1280px) 22vw, (min-width:768px) 30vw, 50vw"
             className="transition-[transform,opacity] duration-[900ms] ease-[var(--ease-out-soft)] group-hover:scale-[1.035]"
           />
-          {(second || p.demoShape) && (
+          {second?.url && (
             <ProductMedia
               url={second?.url}
               alt=""
-              demoShape={second?.url ? undefined : p.demoShape}
+              
               colorHex={secondHex ?? firstHex}
               angle={2}
               background="#e4dbcd"
@@ -56,7 +56,8 @@ export function ProductCard({ product: p, priority }: { product: Product; priori
         </h3>
         <Price priceCents={p.priceCents} salePriceCents={p.salePriceCents} />
         {colors.length > 1 && (
-          <p className="flex items-center gap-1.5 pt-1" aria-label={`${colors.length} coloris : ${colors.map(([n]) => n).join(", ")}`}>
+          <p className="flex items-center gap-1.5 pt-1">
+            <span className="sr-only">{`${colors.length} coloris : ${colors.map(([n]) => n).join(", ")}`}</span>
             {colors.slice(0, 5).map(([n, hex]) => (
               <span key={n} className="h-2.5 w-2.5 rounded-full border border-ink/15" style={{ background: hex }} aria-hidden="true" />
             ))}

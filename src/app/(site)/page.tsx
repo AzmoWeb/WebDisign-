@@ -114,7 +114,7 @@ export default async function HomePage() {
       {news.products.length > 0 && (
         <section className="container-site mt-24 md:mt-32" aria-labelledby="h-nouveautes">
           <div id="h-nouveautes"><SectionHeading kicker="Fraîchement arrivées" title="Nouveautés" href="/nouveautes" /></div>
-          <Rail products={news.products.slice(0, 10)} label="Nouveautés" />
+          <Rail products={news.products.slice(0, 8)} label="Nouveautés" />
         </section>
       )}
 
@@ -122,7 +122,7 @@ export default async function HomePage() {
       {best.products.length > 0 && (
         <section className="container-site mt-24 md:mt-32" aria-label="Meilleures ventes">
           <SectionHeading kicker="Les plus demandées" title="Meilleures ventes" href="/femme?tri=pertinence" linkLabel="Voir la boutique" />
-          <Rail products={best.products.slice(0, 10)} label="Meilleures ventes" />
+          <Rail products={best.products.slice(0, 8)} label="Meilleures ventes" />
         </section>
       )}
 
@@ -150,7 +150,7 @@ export default async function HomePage() {
       {promos.products.length > 0 && (
         <section className="container-site mt-24 md:mt-32" aria-label="Promotions">
           <SectionHeading kicker="Prix réduits" title="Promotions" href="/promotions" tone="sale" />
-          <Rail products={promos.products.slice(0, 10)} label="Promotions" />
+          <Rail products={promos.products.slice(0, 8)} label="Promotions" />
         </section>
       )}
 

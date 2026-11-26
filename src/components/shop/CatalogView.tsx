@@ -53,6 +53,7 @@ export async function CatalogView({ title, kicker, intro, base, searchParams, br
               </div>
             </div>
             <ActiveFilters />
+            <h2 className="sr-only">Produits</h2>
             {products.length ? (
               <ul className="grid grid-cols-2 gap-x-4 gap-y-12 md:grid-cols-3 md:gap-x-6">
                 {products.map((p, i) => (
