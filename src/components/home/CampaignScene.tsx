@@ -17,7 +17,7 @@ const DERBY_SOLE = "M44 216 L362 216 Q364 230 350 232 L56 232 Q44 232 44 216 Z";
 export function CampaignScene({ scene, className }: { scene: Scene; className?: string }) {
   if (scene === "femme")
     return (
-      <svg viewBox="0 0 800 900" className={className} preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <svg viewBox="0 0 800 900" className={className} preserveAspectRatio="xMidYMax slice" aria-hidden="true">
         <rect width="800" height="900" fill="#e6dccd" />
         {/* façade : arcades */}
         {[60, 330, 600].map((x) => (
@@ -48,7 +48,7 @@ export function CampaignScene({ scene, className }: { scene: Scene; className?: 
     );
   if (scene === "baskets")
     return (
-      <svg viewBox="0 0 800 900" className={className} preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <svg viewBox="0 0 800 900" className={className} preserveAspectRatio="xMidYMax slice" aria-hidden="true">
         <rect width="800" height="900" fill="#c9c4bb" />
         {/* marches béton en perspective */}
         {Array.from({ length: 9 }).map((_, i) => (
@@ -72,7 +72,7 @@ export function CampaignScene({ scene, className }: { scene: Scene; className?: 
       </svg>
     );
   return (
-    <svg viewBox="0 0 800 900" className={className} preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <svg viewBox="0 0 800 900" className={className} preserveAspectRatio="xMidYMax slice" aria-hidden="true">
       <rect width="800" height="900" fill="#cfcac2" />
       {/* colonnade contemporaine */}
       {[40, 230, 420, 610].map((x) => (

@@ -68,7 +68,7 @@ export function ProductGallery({ images, demoShape, colorHex, name }: { images: 
 
       {/* carrousel tactile (mobile / tablette) */}
       <div className="lg:hidden">
-        <div ref={track} className="no-scrollbar -mx-4 flex snap-x snap-mandatory overflow-x-auto md:mx-0"
+        <div ref={track} className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto"
           onScroll={(e) => setIndex(Math.round(e.currentTarget.scrollLeft / e.currentTarget.clientWidth))}>
           {slides.map((sl, i) => (
             <button type="button" key={i} onClick={() => setLightbox(true)} className="relative aspect-[4/5] w-full shrink-0 snap-center bg-sand" aria-label={`Agrandir la vue ${i + 1}`}>

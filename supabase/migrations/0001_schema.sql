@@ -5,7 +5,6 @@
 -- exclusivement par le serveur avec la clé service_role.
 -- =====================================================================
 
-create extension if not exists pgcrypto;
 
 -- ---------------------------------------------------------------------
 -- Profils & rôles

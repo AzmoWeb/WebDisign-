@@ -1,3 +1,4 @@
+import { useId } from "react";
 import type { DemoShape } from "@/lib/types";
 
 /**
@@ -71,7 +72,7 @@ export function ShoeArt({ shape, color, className, background = "#ece5da", angle
   const light = luminance(color) > 0.6;
   const soleColor = shape === "sneaker" ? (light ? "#f7f4ee" : "#ece5d8") : light ? "#c9bba6" : "#201d1a";
   const line = light ? shade(color, -0.22) : shade(color, 0.16);
-  const gid = `g-${shape}-${color.slice(1)}-${angle}`;
+  const gid = `g${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   const transform = angle === 1 ? "translate(400 0) scale(-1 1)" : angle === 2 ? "translate(30 18) scale(0.86)" : undefined;
   return (
     <svg viewBox="0 -70 400 480" className={className} role="img" aria-label={title} preserveAspectRatio="xMidYMid slice">

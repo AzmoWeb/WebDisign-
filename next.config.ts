@@ -9,6 +9,7 @@ const supabaseHost = (() => {
 })();
 
 const isDev = process.env.NODE_ENV !== "production";
+const isHttps = (process.env.NEXT_PUBLIC_SITE_URL || "").startsWith("https://");
 
 // Content-Security-Policy : seuls les domaines réellement utilisés sont autorisés.
 // Les scripts statistiques / marketing ne sont injectés qu'après consentement (voir src/components/consent).
@@ -24,7 +25,7 @@ const csp = [
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "object-src 'none'",
-  ...(isDev ? [] : ["upgrade-insecure-requests"]),
+  ...(isHttps ? ["upgrade-insecure-requests"] : []),
 ].join("; ");
 
 const nextConfig: NextConfig = {
@@ -46,7 +47,7 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(self)" },
-          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+          ...(isHttps ? [{ key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" }] : []),
           { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
         ],
       },
