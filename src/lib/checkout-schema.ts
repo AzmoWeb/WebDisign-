@@ -22,6 +22,7 @@ export const CheckoutSchema = z
       })
       .optional(),
     notes: z.string().trim().max(500).optional().default(""),
+    promoCode: z.string().trim().max(40).optional().default(""),
     acceptTerms: z.literal(true, { error: "Vous devez accepter les conditions générales de vente" }),
     lines: z
       .array(z.object({ productId: z.string().min(1).max(64), variantId: z.string().min(1).max(64), quantity: z.number().int().min(1).max(10) }))

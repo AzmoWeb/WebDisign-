@@ -5,8 +5,10 @@ import { useCart } from "@/components/cart/CartProvider";
 import { useConsent } from "@/components/consent/ConsentProvider";
 import { FavoriteButton } from "./FavoriteButton";
 import { ProductGallery } from "./ProductGallery";
+import { StockAlert } from "./StockAlert";
+import { ReserveInStore } from "./ReserveInStore";
 
-export function ProductPurchase({ product: p, children }: { product: Product; children: React.ReactNode }) {
+export function ProductPurchase({ product: p, children, reservation, storeAddress }: { product: Product; children: React.ReactNode; reservation: { enabled: boolean; holdHours: number }; storeAddress: string }) {
   const colors = useMemo(() => [...new Map(p.variants.map((v) => [v.color, v.colorHex])).entries()].map(([name, hex]) => ({ name, hex })), [p.variants]);
   const [color, setColor] = useState(colors[0]?.name ?? "");
   const [variantId, setVariantId] = useState<string | null>(null);
@@ -53,10 +55,10 @@ export function ProductPurchase({ product: p, children }: { product: Product; ch
 
   return (
     <div className="grid gap-10 lg:grid-cols-12 lg:gap-14">
-      <div className="lg:col-span-7">
+      <div className="min-w-0 lg:col-span-7">
         <ProductGallery images={images.length ? images : p.images} demoShape={p.demoShape} colorHex={colorHex} name={p.name} />
       </div>
-      <div className="lg:col-span-5">
+      <div className="min-w-0 lg:col-span-5">
         <div className="lg:sticky lg:top-36">
           {children}
 
@@ -120,6 +122,21 @@ export function ProductPurchase({ product: p, children }: { product: Product; ch
               {added ? "Ajouté au panier" : outOfStock ? "Épuisé" : "Ajouter au panier"}
             </button>
             <FavoriteButton productId={p.id} name={p.name} className="h-[3.25rem] w-[3.25rem] border border-line" />
+          </div>
+          {reservation.enabled && !outOfStock && (
+            <ReserveInStore
+              variant={selected}
+              productName={p.name}
+              holdHours={reservation.holdHours}
+              storeAddress={storeAddress}
+              onNeedSize={() => {
+                setError("Choisissez d'abord votre pointure.");
+                document.getElementById("size-picker")?.focus();
+              }}
+            />
+          )}
+          <div className="mt-4">
+            <StockAlert key={color} soldOut={variants.filter((v) => v.stock === 0)} />
           </div>
           {p.isDemo && <p className="mt-3 text-xs text-[#6b5320]">Article de démonstration : il peut être placé dans le panier pour tester le parcours, mais ne peut pas être commandé.</p>}
         </div>

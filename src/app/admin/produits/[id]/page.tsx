@@ -14,9 +14,10 @@ export default async function EditProduct({ params, searchParams }: { params: Pr
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const { sb } = await adminPage();
-  const [{ data: p }, { data: cats }] = await Promise.all([
+  const [{ data: p }, { data: cats }, { count: alerts }] = await Promise.all([
     sb.from("products").select("*, images:product_images(id, url, alt, color, position), variants:product_variants(id, color, color_hex, size, stock, sku)").eq("id", id).maybeSingle(),
     sb.from("categories").select("id, name, gender").order("position"),
+    sb.from("stock_alerts").select("id", { count: "exact", head: true }).eq("product_id", id).is("notified_at", null),
   ]);
   if (!p) notFound();
   const sp = await searchParams;
@@ -32,7 +33,7 @@ export default async function EditProduct({ params, searchParams }: { params: Pr
       {sp.cree && <p className="mb-4 bg-[#e3ead9] px-4 py-2 text-sm text-moss">Produit créé. Ajoutez maintenant ses pointures, ses stocks et ses photos, puis mettez-le en ligne.</p>}
       <div className="space-y-6">
         <Panel title="Informations"><ProductForm product={p} categories={cats ?? []} /></Panel>
-        <Panel title="Pointures, coloris et stocks"><VariantsEditor productId={p.id} initial={variants} gender={p.gender} /></Panel>
+        <Panel title="Pointures, coloris et stocks" actions={alerts ? <span className="text-xs text-oxblood">{alerts} client(s) attendent un retour en stock</span> : undefined}><VariantsEditor productId={p.id} initial={variants} gender={p.gender} /></Panel>
         <Panel title="Photographies"><ImagesManager productId={p.id} images={images} colors={colors} /></Panel>
         <Panel title="Zone sensible">
           <form action={deleteProductAction} className="flex flex-wrap items-center gap-4">

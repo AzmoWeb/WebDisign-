@@ -44,7 +44,7 @@ export default async function ProductPage({ params }: Props) {
         ]}
       />
       <div className="mt-8">
-        <ProductPurchase product={p}>
+        <ProductPurchase product={p} reservation={settings.reservation} storeAddress={`${settings.store.street}, ${settings.store.postalCode} ${settings.store.city}`}>
           {p.brand && <p className="label text-mist">{p.brand}</p>}
           <h1 className="display mt-2 text-[2.2rem] leading-[1.08] md:text-[2.8rem]">{p.name}</h1>
           <div className="mt-5 flex flex-wrap items-center gap-3">

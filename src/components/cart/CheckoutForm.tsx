@@ -7,6 +7,7 @@ import { availableShipping } from "@/lib/shipping";
 import { useCart } from "./CartProvider";
 import { usePricedCart } from "./usePricedCart";
 import { ProductMedia } from "@/components/product/ProductMedia";
+import { applyPromoAction } from "@/app/actions/promo";
 
 type Prefill = { firstName: string; lastName: string; email: string; phone: string; address: { line1: string; line2: string; postalCode: string; city: string } | null } | null;
 
@@ -29,10 +30,30 @@ export function CheckoutForm({ shipping, storeLabel, paymentsEnabled, prefill }:
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [promoInput, setPromoInput] = useState("");
+  const [promo, setPromo] = useState<{ code: string; discountCents: number; label: string } | null>(null);
+  const [promoMsg, setPromoMsg] = useState<string | null>(null);
+  const [promoBusy, setPromoBusy] = useState(false);
 
   const option = options.find((o) => o.id === methodId) ?? null;
   const shippingCents = option?.priceCents ?? null;
-  const total = subtotal + (shippingCents ?? 0);
+  const discount = promo ? Math.min(promo.discountCents, Math.max(0, subtotal - 50)) : 0;
+  const total = subtotal - discount + (shippingCents ?? 0);
+
+  async function applyPromo() {
+    if (!promoInput.trim()) return;
+    setPromoBusy(true);
+    setPromoMsg(null);
+    const r = await applyPromoAction(promoInput, lines).catch(() => ({ ok: false as const, reason: "Vérification impossible, réessayez." }));
+    setPromoBusy(false);
+    if (r.ok) {
+      setPromo({ code: r.code, discountCents: r.discountCents, label: r.label });
+      setPromoInput("");
+    } else {
+      setPromo(null);
+      setPromoMsg(r.reason);
+    }
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -49,6 +70,7 @@ export function CheckoutForm({ shipping, storeLabel, paymentsEnabled, prefill }:
       relayPoint: option?.type === "relay" ? fd.get("relayPoint") || "" : "",
       address: option?.type === "home" ? { line1: fd.get("line1"), line2: fd.get("line2") || "", postalCode: fd.get("postalCode"), city: fd.get("city"), country: "FR" } : undefined,
       notes: fd.get("notes") || "",
+      promoCode: promo?.code ?? "",
       acceptTerms: fd.get("acceptTerms") === "on",
       lines,
     };
@@ -183,8 +205,25 @@ export function CheckoutForm({ shipping, storeLabel, paymentsEnabled, prefill }:
                 </li>
               ))}
             </ul>
+            <div className="mt-4 border-t border-line pt-4">
+              <label htmlFor="promo" className="field-label">Code promo</label>
+              <div className="flex gap-2">
+                <input id="promo" value={promoInput} onChange={(e) => setPromoInput(e.target.value.toUpperCase())} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyPromo(); } }} maxLength={30} autoComplete="off" className="field min-h-11 py-2 uppercase" placeholder="BIENVENUE10" />
+                <button type="button" onClick={applyPromo} disabled={promoBusy || !promoInput.trim()} className="btn btn-outline min-h-11 px-4">{promoBusy ? "…" : "Appliquer"}</button>
+              </div>
+              {promoMsg && <p className="mt-1.5 text-xs text-oxblood" role="alert">{promoMsg}</p>}
+            </div>
             <dl className="mt-4 space-y-2 border-t border-line pt-4 text-sm">
               <div className="flex justify-between"><dt>Sous-total</dt><dd className="tabular-nums">{formatPrice(subtotal)}</dd></div>
+              {promo && (
+                <div className="flex justify-between text-oxblood">
+                  <dt>
+                    Code {promo.code} ({promo.label}){" "}
+                    <button type="button" onClick={() => setPromo(null)} className="ml-1 text-xs text-graphite underline">retirer</button>
+                  </dt>
+                  <dd className="tabular-nums">−{formatPrice(discount)}</dd>
+                </div>
+              )}
               <div className="flex justify-between"><dt>Livraison</dt><dd className="tabular-nums">{shippingCents == null ? "—" : shippingCents === 0 ? "Offerte" : formatPrice(shippingCents)}</dd></div>
               <div className="flex justify-between border-t border-line pt-3 text-base font-medium"><dt>Total TTC</dt><dd className="tabular-nums">{formatPrice(total)}</dd></div>
             </dl>

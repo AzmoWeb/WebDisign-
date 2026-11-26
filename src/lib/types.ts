@@ -131,6 +131,9 @@ export type ReviewsSettings = {
   manualCheckedAt: string | null;
 };
 
+export type PromoBannerSettings = { kicker: string; title: string; text: string; ctaLabel: string; ctaHref: string; highlight: boolean };
+export type ReservationSettings = { enabled: boolean; holdHours: number };
+
 export type SiteSettings = {
   announcement: AnnouncementSettings;
   hero: HeroSettings;
@@ -139,6 +142,8 @@ export type SiteSettings = {
   shipping: ShippingSettings;
   reviews: ReviewsSettings;
   storeIntro: { title: string; text: string; imageUrl: string | null };
+  promoBanner: PromoBannerSettings;
+  reservation: ReservationSettings;
 };
 
 export type CartLine = { productId: string; variantId: string; quantity: number };

@@ -64,7 +64,7 @@ export function CartPageClient() {
                 )}
                 <div className="flex justify-between border-t border-line pt-4 text-base"><dt>Total articles</dt><dd className="tabular-nums">{formatPrice(data.subtotalCents)}</dd></div>
               </dl>
-              <p className="mt-2 text-xs text-mist">Prix TTC. Les codes promotionnels se saisissent à l&apos;étape du paiement.</p>
+              <p className="mt-2 text-xs text-mist">Prix TTC. Vous pourrez saisir un code promo à l&apos;étape suivante.</p>
               {data.hasDemo ? (
                 <p className="mt-6 bg-[#f3e7c9] p-3 text-xs text-[#4d3a12]">Votre panier contient des articles de démonstration : la commande est désactivée.</p>
               ) : !data.shipping.ready ? (

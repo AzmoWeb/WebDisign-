@@ -4,7 +4,7 @@ import type { SiteSettings } from "./types";
 import { DEFAULT_SETTINGS } from "./settings-defaults";
 import { supabasePublic } from "./supabase/public";
 
-const KEYS = ["announcement", "hero", "campaign", "store", "shipping", "reviews", "storeIntro"] as const;
+const KEYS = ["announcement", "hero", "campaign", "store", "shipping", "reviews", "storeIntro", "promoBanner", "reservation"] as const;
 export type SettingsKey = (typeof KEYS)[number];
 export const SETTINGS_KEYS = KEYS;
 

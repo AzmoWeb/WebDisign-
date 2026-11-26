@@ -5,8 +5,10 @@ import { usePathname } from "next/navigation";
 const LINKS = [
   { href: "/admin", label: "Tableau de bord" },
   { href: "/admin/commandes", label: "Commandes" },
+  { href: "/admin/reservations", label: "Réservations" },
   { href: "/admin/produits", label: "Produits" },
   { href: "/admin/categories", label: "Catégories" },
+  { href: "/admin/promotions", label: "Promotions" },
   { href: "/admin/contenu", label: "Contenus du site" },
   { href: "/admin/magasin", label: "Magasin & livraison" },
   { href: "/admin/avis", label: "Avis Google" },

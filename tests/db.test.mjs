@@ -19,7 +19,7 @@ alter default privileges in schema public grant all on tables to anon, authentic
 alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
 alter default privileges in schema public grant execute on functions to anon, authenticated, service_role;
 `);
-for (const f of ["0001_schema.sql", "0002_seed_categories.sql", "0003_google_reviews.sql", "0004_shipping_methods.sql"]) await db.exec(readFileSync(new URL(`../supabase/migrations/${f}`, import.meta.url), "utf8"));
+for (const f of ["0001_schema.sql", "0002_seed_categories.sql", "0003_google_reviews.sql", "0004_shipping_methods.sql", "0005_alerts_promos_reservations.sql"]) await db.exec(readFileSync(new URL(`../supabase/migrations/${f}`, import.meta.url), "utf8"));
 
 const q = async (sql, p) => (await db.query(sql, p)).rows;
 const as = async (role, uid, fn) => {
@@ -101,4 +101,60 @@ test("messages, journaux et événements Stripe sont privés", async () => {
 test("favoris : un client ne peut pas écrire pour un autre", async () => {
   await as("authenticated", U1, () => q("insert into favorites (user_id, product_id) values ($1,$2)", [U1, P]));
   assert.ok(await rejects(as("authenticated", U2, () => q("insert into favorites (user_id, product_id) values ($1,$2)", [U1, P]))));
+});
+
+test("réservation en magasin : stock bloqué, limites, annulation et expiration", async () => {
+  const pid = (await q(`insert into products (slug,name,gender,price_cents,sale_price_cents,active) values ('r1','Mocassin','homme',10000,8000,true) returning id`))[0].id;
+  const vid = (await q(`insert into product_variants (product_id,color,size,stock) values ($1,'Noir','42',2) returning id`, [pid]))[0].id;
+  const reserve = (email) => q(`select * from create_reservation($1, null, 'A', 'B', $2, '0600000000', 48)`, [vid, email]);
+  const stock = async () => (await q("select stock from product_variants where id=$1", [vid]))[0].stock;
+
+  const r1 = (await reserve("a@x.fr"))[0];
+  assert.equal(r1.result, "ok");
+  assert.match(r1.reservation_number, /^RES-\d+$/);
+  assert.equal(await stock(), 1);
+  assert.equal((await q("select price_cents from reservations where id=$1", [r1.reservation_id]))[0].price_cents, 8000, "prix promotionnel retenu");
+  await reserve("b@x.fr");
+  assert.equal(await stock(), 0);
+  assert.equal((await reserve("c@x.fr"))[0].result, "out_of_stock");
+
+  // annulation → remise en stock ; double clôture refusée
+  assert.equal((await q("select set_reservation_status($1,'cancelled') r", [r1.reservation_id]))[0].r, "ok");
+  assert.equal(await stock(), 1);
+  assert.equal((await q("select set_reservation_status($1,'cancelled') r", [r1.reservation_id]))[0].r, "closed");
+  assert.equal(await stock(), 1);
+
+  // expiration automatique
+  const r3 = (await reserve("d@x.fr"))[0];
+  await q("update reservations set expires_at = now() - interval '1 hour' where id=$1", [r3.reservation_id]);
+  assert.equal((await q("select expire_reservations() n"))[0].n, 1);
+  assert.equal((await q("select status from reservations where id=$1", [r3.reservation_id]))[0].status, "expired");
+  assert.equal(await stock(), 1);
+
+  // 3 réservations actives maximum par e-mail
+  await q(`update product_variants set stock = 10 where id=$1`, [vid]);
+  for (let i = 0; i < 3; i++) await reserve("e@x.fr");
+  assert.equal((await reserve("E@x.fr"))[0].result, "too_many");
+
+  // fonctions réservées au serveur
+  assert.ok(await rejects(as("authenticated", U1, () => q(`select * from create_reservation($1, null, 'A','B','z@x.fr','06',48)`, [vid]))));
+  assert.ok(await rejects(as("authenticated", ADM, () => q("select set_reservation_status($1,'collected')", [r1.reservation_id]))));
+  assert.ok(await rejects(as("anon", null, () => q("select expire_reservations()"))));
+  assert.equal((await as("authenticated", U2, () => q("select count(*)::int c from reservations")))[0].c, 0, "réservations privées");
+  assert.ok((await as("authenticated", ADM, () => q("select count(*)::int c from reservations")))[0].c > 0);
+});
+
+test("codes promo : privés, comptés au paiement", async () => {
+  await q(`insert into promo_codes (code, kind, value) values ('BIENVENUE10','percent',10)`);
+  assert.ok(await rejects(q(`insert into promo_codes (code, kind, value) values ('TROP','percent',95)`)));
+  assert.equal((await as("anon", null, () => q("select count(*)::int c from promo_codes")))[0].c, 0);
+  const o = (await q(`insert into orders (email,first_name,last_name,phone,shipping_method,subtotal_cents,shipping_cents,total_cents,promo_code,expected_discount_cents) values ('p@x.fr','P','Q','06','retrait-magasin',10000,0,10000,'BIENVENUE10',1000) returning id`))[0];
+  assert.equal((await q("select finalize_paid_order($1,'pi_2',9000,1000) r", [o.id]))[0].r, "ok");
+  assert.equal((await q("select uses from promo_codes where code='BIENVENUE10'"))[0].uses, 1);
+});
+
+test("alertes retour en stock : une seule alerte en attente par e-mail et pointure, privées", async () => {
+  await q(`insert into stock_alerts (variant_id, product_id, email) values ($1,$2,'x@x.fr')`, [V, P]);
+  assert.ok(await rejects(q(`insert into stock_alerts (variant_id, product_id, email) values ($1,$2,'X@x.fr')`, [V, P])));
+  assert.equal((await as("anon", null, () => q("select count(*)::int c from stock_alerts")))[0].c, 0);
 });

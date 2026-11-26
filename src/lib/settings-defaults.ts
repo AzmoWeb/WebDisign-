@@ -45,6 +45,15 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     pickupText: "Venez chercher votre commande quand vous le souhaitez, aux heures d'ouverture.",
   },
   reviews: { manualRating: null, manualCount: null, manualCheckedAt: null },
+  promoBanner: {
+    kicker: "Sélection",
+    title: "Promotions",
+    text: "Une sélection de modèles femme et homme à prix réduits, dans la limite des stocks disponibles.",
+    ctaLabel: "Voir les promotions",
+    ctaHref: "/promotions",
+    highlight: false,
+  },
+  reservation: { enabled: true, holdHours: 48 },
   storeIntro: {
     title: "Votre magasin de chaussures à Bar-sur-Seine",
     text: "Aux Jolis Pas est une boutique spécialisée dans les chaussures pour femmes et pour hommes, installée Grande Rue de la Résistance à Bar-sur-Seine. Venez découvrir nos modèles, les essayer et trouver la paire qui vous correspond.",
