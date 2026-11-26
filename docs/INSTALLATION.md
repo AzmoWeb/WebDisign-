@@ -9,6 +9,8 @@
 
 ## 2. Base de données Supabase
 
+> **Le plus simple** : suivre `docs/MISE-EN-LIGNE.md` (intégration Supabase de Vercel). Les migrations sont alors appliquées **automatiquement** à chaque build par `scripts/migrate.mjs` (variable `POSTGRES_URL_NON_POOLING`), et l'administrateur initial est désigné par la variable `ADMIN_EMAIL`. La procédure manuelle ci-dessous reste possible.
+
 1. Créez un projet Supabase (région UE).
 2. **SQL Editor** → exécutez dans l'ordre :
    - `supabase/migrations/0001_schema.sql` (tables, RLS, fonctions, stockage des images)

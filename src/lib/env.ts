@@ -1,6 +1,11 @@
 /** Accès centralisé aux variables d'environnement. */
 export const env = {
-  siteUrl: (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, ""),
+  // Sur Vercel, l'adresse de production est détectée automatiquement si NEXT_PUBLIC_SITE_URL n'est pas définie
+  siteUrl: (
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "") ||
+    "http://localhost:3000"
+  ).replace(/\/$/, ""),
   supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
   supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
   ga4Id: process.env.NEXT_PUBLIC_GA4_ID || "",

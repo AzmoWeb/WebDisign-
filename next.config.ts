@@ -9,7 +9,7 @@ const supabaseHost = (() => {
 })();
 
 const isDev = process.env.NODE_ENV !== "production";
-const isHttps = (process.env.NEXT_PUBLIC_SITE_URL || "").startsWith("https://");
+const isHttps = (process.env.NEXT_PUBLIC_SITE_URL || "").startsWith("https://") || Boolean(process.env.VERCEL);
 
 // Content-Security-Policy : seuls les domaines réellement utilisés sont autorisés.
 // Les scripts statistiques / marketing ne sont injectés qu'après consentement (voir src/components/consent).
