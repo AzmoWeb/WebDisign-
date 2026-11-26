@@ -157,6 +157,17 @@ await run("Mobile : pas de débordement horizontal", async (page) => {
 await run("Mobile : menu hamburger et panneau de filtres", async (page) => {
   await page.goto(BASE + "/");
   await page.getByRole("button", { name: "Ouvrir le menu" }).click();
+  // Le panneau doit occuper toute la hauteur de l'écran (régression : rogné par le flou du header)
+  const panel = await page.getByRole("dialog", { name: "Menu" }).boundingBox();
+  const vh = page.viewportSize().height;
+  assert.ok(panel.height >= vh - 2, `menu rogné : ${panel.height}px sur ${vh}px`);
+  for (const label of ["Nouveautés", "Promotions", "Notre magasin", "Contact"]) {
+    const link = page.getByRole("dialog", { name: "Menu" }).getByRole("link", { name: label, exact: true });
+    assert.ok(await link.isVisible(), `lien « ${label} » invisible dans le menu`);
+  }
+  await page.getByRole("dialog", { name: "Menu" }).getByRole("link", { name: "Contact", exact: true }).click();
+  await page.waitForURL(/\/contact/);
+  await page.getByRole("button", { name: "Ouvrir le menu" }).click();
   await page.getByRole("button", { name: /Femme/ }).click();
   await page.getByRole("link", { name: "Bottines" }).click();
   await page.waitForURL(/\/femme\/bottines/);
