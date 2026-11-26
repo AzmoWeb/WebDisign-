@@ -9,6 +9,7 @@ import { IconBag, IconChevron, IconClose, IconHeart, IconMenu, IconSearch, IconU
 import { useCart } from "@/components/cart/CartProvider";
 import { useFavorites } from "@/components/product/FavoritesProvider";
 import { CampaignScene } from "@/components/home/CampaignScene";
+import { Portal } from "@/components/ui/Portal";
 
 type NavItem = { label: string; href: string; mega?: "femme" | "homme" };
 const NAV: NavItem[] = [
@@ -129,10 +130,15 @@ export function Header({ categories, loggedIn }: { categories: Category[]; logge
       )}
 
       {/* menu mobile */}
-      {mobileOpen && <MobileMenu categories={categories} loggedIn={loggedIn} onClose={() => setMobileOpen(false)} />}
+      {mobileOpen && (
+        <Portal>
+          <MobileMenu categories={categories} loggedIn={loggedIn} onClose={() => setMobileOpen(false)} />
+        </Portal>
+      )}
 
       {/* recherche mobile */}
       {searchOpen && (
+        <Portal>
         <div className="fixed inset-0 z-50 bg-paper animate-fade lg:hidden" role="dialog" aria-modal="true" aria-label="Recherche">
           <div className="container-site pt-5">
             <div className="flex justify-end">
@@ -145,6 +151,7 @@ export function Header({ categories, loggedIn }: { categories: Category[]; logge
             </div>
           </div>
         </div>
+        </Portal>
       )}
     </header>
   );
