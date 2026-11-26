@@ -13,9 +13,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <main className="mx-auto max-w-2xl px-6 py-20">
         <p className="label text-mist">Administration</p>
         <h1 className="display mt-3 text-4xl">Configuration requise</h1>
-        <p className="mt-6 leading-relaxed text-graphite">
-          Le tableau de bord nécessite la base de données Supabase. Renseignez les variables <code>NEXT_PUBLIC_SUPABASE_URL</code>, <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> et <code>SUPABASE_SERVICE_ROLE_KEY</code>, appliquez les migrations puis créez le compte administrateur (voir <code>docs/INSTALLATION.md</code>).
-        </p>
+        <p className="mt-6 leading-relaxed text-graphite">L&apos;administration s&apos;activera dès que la base de données sera branchée au site :</p>
+        <ol className="mt-4 list-decimal space-y-2 pl-5 leading-relaxed text-graphite">
+          <li>Dans Vercel, ouvrez le projet → onglet <strong>Storage</strong> → <strong>Supabase</strong> → <strong>Create</strong> (région Europe).</li>
+          <li>Vérifiez que la variable <code>ADMIN_EMAIL</code> contient votre adresse e-mail (Settings → Environment Variables).</li>
+          <li>Onglet <strong>Deployments</strong> → « ⋯ » → <strong>Redeploy</strong>.</li>
+          <li>Créez votre compte sur le site avec cette adresse, confirmez l&apos;e-mail, puis revenez ici.</li>
+        </ol>
+        <p className="mt-4 text-sm text-mist">Guide détaillé : docs/MISE-EN-LIGNE.md</p>
         <Link href="/" className="btn btn-outline mt-10">Retour au site</Link>
       </main>
     );
