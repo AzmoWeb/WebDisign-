@@ -144,6 +144,21 @@ export function StoreIntroEditor({ initial }: { initial: SiteSettings["storeIntr
   );
 }
 
+function BrandsField({ initial, onChange }: { initial: string[]; onChange: (b: string[]) => void }) {
+  const [text, setText] = useState(initial.join(", "));
+  return (
+    <T
+      label="Marques distribuées (séparées par des virgules)"
+      value={text}
+      max={1000}
+      onChange={(t) => {
+        setText(t);
+        onChange(t.split(",").map((x) => x.trim()).filter(Boolean));
+      }}
+    />
+  );
+}
+
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
 export function StoreEditor({ initial }: { initial: StoreInfo }) {
@@ -162,6 +177,7 @@ export function StoreEditor({ initial }: { initial: StoreInfo }) {
       <T label="E-mail public (facultatif)" value={v.email} max={160} onChange={(t) => up({ email: t || null })} />
       <div className="md:col-span-2"><T label="Lien Google Maps" value={v.mapsUrl} max={500} onChange={(t) => up({ mapsUrl: t })} /></div>
       <div className="md:col-span-2"><T label="Présentation (page Notre magasin)" value={v.description} max={2000} area onChange={(t) => up({ description: t || null })} /></div>
+      <div className="md:col-span-2"><BrandsField initial={v.brands ?? []} onChange={(brands) => up({ brands })} /></div>
 
       <fieldset className="md:col-span-2">
         <legend className="field-label">Horaires d&apos;ouverture</legend>

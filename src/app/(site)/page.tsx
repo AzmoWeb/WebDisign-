@@ -7,6 +7,7 @@ import { DiagonalCampaign } from "@/components/home/DiagonalCampaign";
 import { CampaignScene } from "@/components/home/CampaignScene";
 import { SectionHeading } from "@/components/home/SectionHeading";
 import { GoogleReviews } from "@/components/home/GoogleReviews";
+import { BrandsBand } from "@/components/home/BrandsBand";
 import { PracticalInfo } from "@/components/home/PracticalInfo";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ProductRail, RailItem } from "@/components/product/ProductRail";
@@ -190,6 +191,11 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* MARQUES */}
+      <div className="mt-24 md:mt-32">
+        <BrandsBand brands={store.brands ?? []} />
+      </div>
 
       {/* 9. AVIS GOOGLE */}
       <GoogleReviews data={reviews} />

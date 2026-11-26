@@ -7,6 +7,7 @@ import { PracticalInfo } from "@/components/home/PracticalInfo";
 import { CampaignScene } from "@/components/home/CampaignScene";
 import { DiagonalCampaign } from "@/components/home/DiagonalCampaign";
 import { getCategories } from "@/lib/catalog";
+import { BrandsBand } from "@/components/home/BrandsBand";
 
 export const metadata = {
   title: "Notre magasin de chaussures à Bar-sur-Seine",
@@ -71,7 +72,9 @@ export default async function StorePage() {
         </p>
       </section>
 
-      <div className="mt-24"><PracticalInfo store={store} /></div>
+      <div className="mt-24"><BrandsBand brands={store.brands ?? []} title="Nos marques" /></div>
+
+      <PracticalInfo store={store} />
     </>
   );
 }

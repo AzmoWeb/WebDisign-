@@ -76,6 +76,8 @@ export type StoreInfo = {
   hours: OpeningHours | null;
   hoursNote: string | null;
   description: string | null;
+  /** Marques distribuées en magasin (liste fournie par la commerçante). */
+  brands: string[];
 };
 
 export type AnnouncementSettings = { enabled: boolean; messages: { text: string; href?: string | null }[] };

@@ -266,7 +266,7 @@ const SETTING_SCHEMAS: Record<SettingsKey, z.ZodTypeAny> = {
   store: z.object({
     name: z.string().trim().min(1).max(80), street: z.string().trim().min(1).max(160), postalCode: z.string().trim().regex(/^\d{5}$/), city: z.string().trim().min(1).max(80), country: z.literal("FR"),
     phone: z.string().trim().max(20), phoneE164: z.string().trim().regex(/^\+\d{8,15}$/), email: z.string().trim().email().max(160).nullable().or(z.literal("").transform(() => null)),
-    mapsUrl: z.string().trim().regex(/^https:\/\/(www\.)?google\.[a-z.]+\/maps/).max(500), description: z.string().trim().max(2000).nullable(), hoursNote: z.string().trim().max(300).nullable(),
+    mapsUrl: z.string().trim().regex(/^https:\/\/(www\.)?google\.[a-z.]+\/maps/).max(500), description: z.string().trim().max(2000).nullable(), brands: z.array(z.string().trim().min(1).max(40)).max(40).default([]), hoursNote: z.string().trim().max(300).nullable(),
     hours: z.array(z.object({ day: z.enum(["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]), closed: z.boolean(), open: time, close: time, open2: time.optional(), close2: time.optional() })).length(7).nullable(),
   }),
   shipping: z.object({

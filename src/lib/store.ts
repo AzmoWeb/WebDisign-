@@ -27,6 +27,8 @@ export const STORE_DEFAULTS: StoreInfo = {
   ],
   hoursNote: null,
   description: null,
+  // Marques indiquées par la commerçante (orthographe à confirmer pour certaines)
+  brands: ["Dorking", "Suave", "Infini", "Arima", "Altex", "Or'lando", "Madison", "Moran's", "Romika", "Artika"],
 };
 
 export const directionsUrl = (s: StoreInfo) =>

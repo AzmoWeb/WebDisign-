@@ -32,6 +32,7 @@ export function storeJsonLd(s: SiteSettings) {
     hasMap: st.mapsUrl,
   };
   if (st.email) data.email = st.email;
+  if (st.brands?.length) data.brand = st.brands.map((name) => ({ "@type": "Brand", name }));
   if (st.hours?.length) {
     data.openingHoursSpecification = st.hours
       .filter((h) => !h.closed && h.open && h.close)
