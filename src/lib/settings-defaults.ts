@@ -40,9 +40,9 @@ export const DEFAULT_SETTINGS: SiteSettings = {
       { id: "mondial-relay", carrier: "mondial_relay", type: "relay", label: "Mondial Relay — livraison en point relais", enabled: true, priceCents: null, freeFromCents: null, delayText: "Expédié sous 24 h" },
       { id: "colissimo-relais", carrier: "colissimo", type: "relay", label: "Colissimo — bureau de poste ou relais Pickup", enabled: false, priceCents: null, freeFromCents: null, delayText: "Expédié sous 24 h" },
     ],
-    // Le retrait en magasin n'est proposé qu'après confirmation du commerçant.
-    pickupEnabled: false,
-    pickupText: null,
+    // Retrait en magasin confirmé par la commerçante : gratuit, sans limite de délai, aux heures d'ouverture.
+    pickupEnabled: true,
+    pickupText: "Venez chercher votre commande quand vous le souhaitez, aux heures d'ouverture.",
   },
   reviews: { manualRating: null, manualCount: null, manualCheckedAt: null },
   storeIntro: {
