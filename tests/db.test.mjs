@@ -19,7 +19,7 @@ alter default privileges in schema public grant all on tables to anon, authentic
 alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
 alter default privileges in schema public grant execute on functions to anon, authenticated, service_role;
 `);
-for (const f of ["0001_schema.sql", "0002_seed_categories.sql", "0003_google_reviews.sql"]) await db.exec(readFileSync(new URL(`../supabase/migrations/${f}`, import.meta.url), "utf8"));
+for (const f of ["0001_schema.sql", "0002_seed_categories.sql", "0003_google_reviews.sql", "0004_shipping_methods.sql"]) await db.exec(readFileSync(new URL(`../supabase/migrations/${f}`, import.meta.url), "utf8"));
 
 const q = async (sql, p) => (await db.query(sql, p)).rows;
 const as = async (role, uid, fn) => {
@@ -59,7 +59,7 @@ test("l'administrateur voit les produits hors ligne", async () => {
 
 test("commandes : création réservée au serveur, lecture limitée au propriétaire", async () => {
   assert.ok(await rejects(as("authenticated", U1, () => q(`insert into orders (email,first_name,last_name,phone,shipping_method,subtotal_cents,total_cents) values ('a','a','a','0','home',1,1)`))));
-  const o = (await q(`insert into orders (user_id,email,first_name,last_name,phone,shipping_method,subtotal_cents,shipping_cents,total_cents) values ($1,'a@x.fr','A','B','0600000000','home',24000,500,24500) returning id`, [U1]))[0];
+  const o = (await q(`insert into orders (user_id,email,first_name,last_name,phone,shipping_method,subtotal_cents,shipping_cents,total_cents) values ($1,'a@x.fr','A','B','0600000000','mondial-relay',24000,500,24500) returning id`, [U1]))[0];
   await q(`insert into order_items (order_id,product_id,variant_id,name,size,color,unit_price_cents,quantity) values ($1,$2,$3,'Bottine','38','Noir',12000,2)`, [o.id, P, V]);
   assert.equal((await as("authenticated", U1, () => q("select count(*)::int c from orders")))[0].c, 1);
   assert.equal((await as("authenticated", U2, () => q("select count(*)::int c from orders")))[0].c, 0);

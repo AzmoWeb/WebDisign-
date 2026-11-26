@@ -6,6 +6,7 @@ import { ADMIN_TRANSITIONS, ORDER_STATUS_LABEL } from "@/lib/order-status";
 import type { OrderStatus } from "@/lib/types";
 import { PageTitle, Panel, StatusBadge } from "@/components/admin/ui";
 import { OrderUpdateForm } from "@/components/admin/OrderUpdateForm";
+import { shippingLabel } from "@/lib/shipping";
 
 export const metadata = { title: "Commande" };
 
@@ -47,8 +48,15 @@ export default async function OrderAdmin({ params }: { params: Promise<{ id: str
               <p className="text-sm leading-relaxed">{o.first_name} {o.last_name}<br /><a href={`mailto:${o.email}`} className="underline">{o.email}</a><br /><a href={`tel:${o.phone}`}>{o.phone}</a></p>
               {o.notes && <p className="mt-4 bg-sand p-3 text-sm">« {o.notes} »</p>}
             </Panel>
-            <Panel title={o.shipping_method === "pickup" ? "Retrait en magasin" : "Livraison à domicile"}>
-              {addr ? <p className="text-sm leading-relaxed">{addr.line1}{addr.line2 ? <><br />{addr.line2}</> : null}<br />{addr.postalCode} {addr.city}</p> : <p className="text-sm">Le client retire sa commande au magasin.</p>}
+            <Panel title="Livraison">
+              <p className="mb-2 text-sm font-medium">{shippingLabel(o.shipping_method, o.shipping_label)}</p>
+              {addr ? (
+                <p className="text-sm leading-relaxed">{addr.line1}{addr.line2 ? <><br />{addr.line2}</> : null}<br />{addr.postalCode} {addr.city}</p>
+              ) : o.relay_point ? (
+                <p className="text-sm leading-relaxed">Point relais choisi : {o.relay_point}</p>
+              ) : (
+                <p className="text-sm">Le client retire sa commande au magasin.</p>
+              )}
             </Panel>
           </div>
           <Panel title="Paiement">

@@ -270,8 +270,20 @@ const SETTING_SCHEMAS: Record<SettingsKey, z.ZodTypeAny> = {
     hours: z.array(z.object({ day: z.enum(["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]), closed: z.boolean(), open: time, close: time, open2: time.optional(), close2: time.optional() })).length(7).nullable(),
   }),
   shipping: z.object({
-    homeDeliveryEnabled: z.boolean(), homeDeliveryCents: z.number().int().min(0).max(100000).nullable(), freeShippingThresholdCents: z.number().int().min(0).max(10000000).nullable(),
-    deliveryDelayText: z.string().trim().max(200).nullable(), pickupEnabled: z.boolean(), pickupText: z.string().trim().max(200).nullable(),
+    methods: z
+      .array(z.object({
+        id: z.string().regex(/^[a-z0-9-]{2,40}$/),
+        carrier: z.enum(["colissimo", "mondial_relay", "chronopost", "autre"]),
+        type: z.enum(["home", "relay"]),
+        label: z.string().trim().min(2, "Libellé de livraison requis").max(100),
+        enabled: z.boolean(),
+        priceCents: z.number().int().min(0).max(100000).nullable(),
+        freeFromCents: z.number().int().min(0).max(10000000).nullable(),
+        delayText: z.string().trim().max(120).nullable(),
+      }))
+      .max(10)
+      .refine((a) => new Set(a.map((m) => m.id)).size === a.length, "Identifiants de livraison en double"),
+    pickupEnabled: z.boolean(), pickupText: z.string().trim().max(200).nullable(),
   }),
   reviews: z.object({ manualRating: z.number().min(1).max(5).nullable(), manualCount: z.number().int().min(0).nullable(), manualCheckedAt: z.string().max(30).nullable() }),
   storeIntro: z.object({ title: z.string().trim().max(120), text: z.string().trim().max(1500), imageUrl: img }),

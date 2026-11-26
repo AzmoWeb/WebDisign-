@@ -14,6 +14,7 @@
    - `supabase/migrations/0001_schema.sql` (tables, RLS, fonctions, stockage des images)
    - `supabase/migrations/0002_seed_categories.sql` (catégories femme/homme)
    - `supabase/migrations/0003_google_reviews.sql` (vos avis Google relevés le 26/11/2026)
+   - `supabase/migrations/0004_shipping_methods.sql` (plusieurs transporteurs, point relais)
    - ou, avec la CLI : `supabase link` puis `supabase db push`.
 3. **Project Settings → API** : récupérez l'URL, la clé `anon` et la clé `service_role`.
 4. **Authentication → URL Configuration** :

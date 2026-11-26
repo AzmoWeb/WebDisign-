@@ -31,7 +31,7 @@ export default async function ConfirmationPage({ searchParams }: { searchParams:
           </p>
           <p className="mt-3 text-graphite">
             {paid
-              ? `Un récapitulatif est envoyé à ${order.email}. ${order.shipping_method === "pickup" ? "Nous vous préviendrons lorsque votre commande sera prête en magasin." : "Nous préparons votre colis."}`
+              ? `Un récapitulatif est envoyé à ${order.email}. ${(order.shipping_method === "retrait-magasin" || order.shipping_method === "pickup") ? "Nous vous préviendrons lorsque votre commande sera prête en magasin." : "Nous préparons votre colis."}`
               : "La confirmation de Stripe peut prendre quelques instants. Actualisez cette page dans un moment ; aucune commande n'est considérée comme payée sans confirmation de Stripe."}
           </p>
         </>

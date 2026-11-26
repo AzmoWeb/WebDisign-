@@ -1,7 +1,7 @@
 "use client";
 import { useState, useTransition } from "react";
 import { saveSettingAction, uploadSiteImageAction } from "@/app/admin/actions";
-import type { AnnouncementSettings, CampaignSettings, HeroSettings, ShippingSettings, SiteSettings, StoreInfo } from "@/lib/types";
+import type { AnnouncementSettings, CampaignSettings, HeroSettings, ShippingMethod, ShippingSettings, SiteSettings, StoreInfo } from "@/lib/types";
 
 function useSaver<T>(key: string, initial: T) {
   const [value, setValue] = useState<T>(initial);
@@ -209,18 +209,55 @@ export function StoreEditor({ initial }: { initial: StoreInfo }) {
 const toCents = (s: string) => (s.trim() === "" ? null : Math.round(Number(s.replace(",", ".")) * 100));
 const fromCents = (c: number | null) => (c == null ? "" : (c / 100).toFixed(2).replace(".", ","));
 
+function MoneyInput({ cents, onChange }: { cents: number | null; onChange: (c: number | null) => void }) {
+  const [text, setText] = useState(fromCents(cents));
+  return (
+    <input
+      value={text}
+      inputMode="decimal"
+      className="field"
+      onChange={(e) => {
+        setText(e.target.value);
+        const c = toCents(e.target.value);
+        onChange(c != null && Number.isFinite(c) && c >= 0 ? c : null);
+      }}
+    />
+  );
+}
+
 export function ShippingEditor({ initial }: { initial: ShippingSettings }) {
   const s = useSaver("shipping", initial);
   const v = s.value;
   const up = (p: Partial<ShippingSettings>) => s.setValue({ ...v, ...p });
-  const [fee, setFee] = useState(fromCents(v.homeDeliveryCents));
-  const [free, setFree] = useState(fromCents(v.freeShippingThresholdCents));
+  const setMethod = (i: number, p: Partial<ShippingMethod>) => up({ methods: v.methods.map((m, k) => (k === i ? { ...m, ...p } : m)) });
+  const CARRIERS: Record<string, string> = { colissimo: "Colissimo (La Poste)", mondial_relay: "Mondial Relay", chronopost: "Chronopost", autre: "Autre" };
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <label className="flex items-center gap-2 text-sm md:col-span-2"><input type="checkbox" checked={v.homeDeliveryEnabled} onChange={(e) => up({ homeDeliveryEnabled: e.target.checked })} className="accent-ink" /> Proposer la livraison à domicile</label>
-      <label className="block"><span className="field-label">Frais de livraison TTC (€) — 0 pour offerte</span><input value={fee} onChange={(e) => { setFee(e.target.value); up({ homeDeliveryCents: toCents(e.target.value) }); }} inputMode="decimal" className="field" /></label>
-      <label className="block"><span className="field-label">Livraison offerte dès (€) — vide si jamais</span><input value={free} onChange={(e) => { setFree(e.target.value); up({ freeShippingThresholdCents: toCents(e.target.value) }); }} inputMode="decimal" className="field" /></label>
-      <div className="md:col-span-2"><T label="Délai / transporteur affiché" value={v.deliveryDelayText} onChange={(t) => up({ deliveryDelayText: t || null })} /></div>
+      <div className="space-y-4 md:col-span-2">
+        {v.methods.map((m, i) => (
+          <fieldset key={m.id} className="grid gap-3 border border-line p-4 sm:grid-cols-6">
+            <legend className="px-1 text-sm font-medium">{CARRIERS[m.carrier]} · {m.type === "relay" ? "point relais" : "domicile"}</legend>
+            <label className="flex items-center gap-2 text-sm sm:col-span-6"><input type="checkbox" checked={m.enabled} onChange={(e) => setMethod(i, { enabled: e.target.checked })} className="accent-ink" /> Proposer ce mode</label>
+            <div className="sm:col-span-6"><T label="Libellé affiché au client" value={m.label} max={100} onChange={(t) => setMethod(i, { label: t })} /></div>
+            <label className="block sm:col-span-2"><span className="field-label">Prix TTC (€) *</span><MoneyInput cents={m.priceCents} onChange={(c) => setMethod(i, { priceCents: c })} /></label>
+            <label className="block sm:col-span-2"><span className="field-label">Offerte dès (€)</span><MoneyInput cents={m.freeFromCents} onChange={(c) => setMethod(i, { freeFromCents: c })} /></label>
+            <div className="sm:col-span-2"><T label="Délai affiché" value={m.delayText} max={120} onChange={(t) => setMethod(i, { delayText: t || null })} /></div>
+            {m.enabled && m.priceCents == null && <p className="text-xs text-oxblood sm:col-span-6">Renseignez le prix : sans tarif, ce mode n&apos;est pas proposé aux clients.</p>}
+            <button type="button" onClick={() => up({ methods: v.methods.filter((_, k) => k !== i) })} className="justify-self-start text-xs text-oxblood underline sm:col-span-6">Supprimer ce mode</button>
+          </fieldset>
+        ))}
+        <div className="flex flex-wrap gap-2">
+          {(["colissimo:home", "colissimo:relay", "mondial_relay:relay", "mondial_relay:home", "chronopost:home"] as const).map((k) => {
+            const [carrier, type] = k.split(":") as [ShippingMethod["carrier"], ShippingMethod["type"]];
+            return (
+              <button key={k} type="button" className="border border-line px-3 py-1.5 text-xs hover:border-ink"
+                onClick={() => up({ methods: [...v.methods, { id: `${carrier.replace("_", "-")}-${type === "home" ? "domicile" : "relais"}-${Date.now().toString(36)}`, carrier, type, label: `${CARRIERS[carrier].replace(" (La Poste)", "")} — ${type === "home" ? "livraison à domicile" : "livraison en point relais"}`, enabled: true, priceCents: null, freeFromCents: null, delayText: null }] })}>
+                + {CARRIERS[carrier]} {type === "home" ? "domicile" : "relais"}
+              </button>
+            );
+          })}
+        </div>
+      </div>
       <label className="flex items-center gap-2 border-t border-line pt-4 text-sm md:col-span-2"><input type="checkbox" checked={v.pickupEnabled} onChange={(e) => up({ pickupEnabled: e.target.checked })} className="accent-ink" /> Proposer le retrait en magasin (uniquement si ce service est réellement assuré)</label>
       <div className="md:col-span-2"><T label="Précisions sur le retrait" value={v.pickupText} onChange={(t) => up({ pickupText: t || null })} /></div>
       <p className="text-xs text-mist md:col-span-2">Tant qu&apos;aucun mode de livraison n&apos;est configuré, la commande en ligne reste fermée.</p>

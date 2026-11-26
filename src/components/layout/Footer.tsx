@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { SiteSettings } from "@/lib/types";
 import { directionsUrl } from "@/lib/store";
+import { shippingReady } from "@/lib/shipping";
 import { ManageCookiesButton } from "@/components/consent/ManageCookiesButton";
 import { Logo } from "./Logo";
 import { HoursTable } from "@/components/ui/HoursTable";
@@ -9,7 +10,7 @@ export function Footer({ settings }: { settings: SiteSettings }) {
   const { store, shipping } = settings;
   const reassurance = [
     { title: "Paiement sécurisé", text: "Transactions chiffrées et traitées par Stripe" },
-    shipping.homeDeliveryEnabled && shipping.homeDeliveryCents != null ? { title: "Livraison à domicile", text: shipping.deliveryDelayText || "Conditions détaillées dans notre politique de livraison" } : null,
+    shippingReady(shipping) ? { title: "Livraison", text: "Colissimo à domicile ou Mondial Relay en point relais" } : null,
     shipping.pickupEnabled ? { title: "Retrait en magasin", text: shipping.pickupText || `À ${store.city}` } : null,
     { title: "Votre magasin", text: `${store.street}, ${store.city}` },
   ].filter(Boolean) as { title: string; text: string }[];

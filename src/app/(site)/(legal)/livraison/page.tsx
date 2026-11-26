@@ -1,6 +1,7 @@
 import { LegalPage, Todo } from "@/components/ui/LegalPage";
+import { ShippingList } from "@/components/ui/ShippingList";
 import { getSettings } from "@/lib/settings";
-import { formatPrice } from "@/lib/money";
+import { shippingReady } from "@/lib/shipping";
 
 export const metadata = { title: "Politique de livraison", alternates: { canonical: "/livraison" } };
 
@@ -8,17 +9,19 @@ export default async function Page() {
   const { shipping: s, store } = await getSettings();
   return (
     <LegalPage title="Livraison" href="/livraison">
-      <h2>Livraison à domicile</h2>
-      {s.homeDeliveryEnabled && s.homeDeliveryCents != null ? (
-        <p>
-          Frais de livraison : {s.homeDeliveryCents === 0 ? "offerts" : formatPrice(s.homeDeliveryCents)}
-          {s.freeShippingThresholdCents != null && s.homeDeliveryCents > 0 ? `, offerts dès ${formatPrice(s.freeShippingThresholdCents)} d'achat` : ""}.
-          {s.deliveryDelayText ? ` ${s.deliveryDelayText}` : ""}
-        </p>
+      <h2>Transporteurs</h2>
+      <p>Nous expédions nos colis avec La Poste (Colissimo) et Mondial Relay, à domicile ou en point relais selon le mode choisi lors de la commande.</p>
+      <h2>Modes et tarifs</h2>
+      {shippingReady(s) ? (
+        <ul>
+          <ShippingList shipping={s} city={store.city} />
+        </ul>
       ) : (
-        <p><Todo>tarifs de livraison (à configurer dans l&apos;administration)</Todo></p>
+        <p><Todo>tarifs de livraison par transporteur (à saisir dans l&apos;administration)</Todo></p>
       )}
-      <p>Zones desservies : <Todo>France métropolitaine ?</Todo> — Transporteur : <Todo>nom</Todo> — Délais : <Todo>délais de préparation et d&apos;acheminement</Todo>.</p>
+      <p>Zones desservies : <Todo>France métropolitaine ?</Todo> — Délai de préparation : <Todo>par exemple 1 à 2 jours ouvrés</Todo>.</p>
+      <h2>Point relais</h2>
+      <p>Pour une livraison en point relais, indiquez le point choisi lors de la commande. Vous êtes prévenu par le transporteur à l&apos;arrivée du colis et disposez d&apos;un délai fixé par celui-ci pour le retirer, muni d&apos;une pièce d&apos;identité.</p>
       <h2>Retrait en magasin</h2>
       {s.pickupEnabled ? (
         <p>Retrait gratuit au magasin, {store.street}, {store.postalCode} {store.city}. {s.pickupText}</p>
@@ -26,7 +29,7 @@ export default async function Page() {
         <p>Le retrait en magasin n&apos;est pas proposé pour le moment. <Todo>confirmer si ce service est offert</Todo></p>
       )}
       <h2>Suivi</h2>
-      <p>Le statut de votre commande est consultable dans votre espace client. <Todo>modalités de suivi du colis</Todo></p>
+      <p>Le statut de votre commande et, dès l&apos;expédition, le numéro de suivi du transporteur sont consultables dans votre espace client.</p>
     </LegalPage>
   );
 }

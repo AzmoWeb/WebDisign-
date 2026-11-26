@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { CheckoutSchema } from "@/lib/checkout-schema";
 import { priceCart } from "@/lib/cart-pricing";
 import { getSettings } from "@/lib/settings";
-import { computeShipping } from "@/lib/shipping";
+import { findShipping } from "@/lib/shipping";
 import { supabaseService } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe";
 import { getCurrentUser } from "@/lib/auth";
@@ -35,8 +35,11 @@ export async function POST(req: Request) {
   const unavailable = cart.lines.find((l) => !l.available);
   if (unavailable) return fail(`${unavailable.name} (pointure ${unavailable.size}) n'est plus disponible dans la quantité demandée.`, 409);
 
-  const shippingCents = computeShipping(settings.shipping, input.method, cart.subtotalCents);
-  if (shippingCents == null) return fail("Ce mode de livraison n'est pas disponible.");
+  // Mode et tarif relus dans les réglages : le navigateur ne choisit que l'identifiant
+  const option = findShipping(settings.shipping, input.method, cart.subtotalCents);
+  if (!option) return fail("Ce mode de livraison n'est pas disponible.");
+  if (option.type !== input.deliveryType) return fail("Mode de livraison invalide, merci de recharger la page.", 409);
+  const shippingCents = option.priceCents;
   const totalCents = cart.subtotalCents + shippingCents;
 
   const { data: order, error } = await sb
@@ -47,8 +50,10 @@ export async function POST(req: Request) {
       first_name: input.firstName,
       last_name: input.lastName,
       phone: input.phone,
-      shipping_method: input.method,
-      shipping_address: input.method === "home" ? input.address : null,
+      shipping_method: option.id,
+      shipping_label: option.label,
+      shipping_address: option.type === "home" ? input.address : null,
+      relay_point: option.type === "relay" ? input.relayPoint : null,
       notes: input.notes || null,
       subtotal_cents: cart.subtotalCents,
       shipping_cents: shippingCents,
@@ -104,7 +109,7 @@ export async function POST(req: Request) {
           shipping_rate_data: {
             type: "fixed_amount",
             fixed_amount: { amount: shippingCents, currency: "eur" },
-            display_name: input.method === "pickup" ? "Retrait en magasin" : "Livraison à domicile",
+            display_name: option.label.slice(0, 100),
           },
         },
       ],

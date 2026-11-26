@@ -56,11 +56,11 @@ export function CartPageClient() {
                 <div className="flex justify-between text-graphite">
                   <dt>Livraison</dt>
                   <dd className="text-right">
-                    {data.shipping.home != null ? (data.shipping.home === 0 ? "Offerte" : `à partir de ${formatPrice(Math.min(data.shipping.home, data.shipping.pickup ?? Infinity))}`) : data.shipping.pickup != null ? "Retrait gratuit" : "À configurer"}
+                    {data.shipping.cheapestCents == null ? "À configurer" : data.shipping.cheapestCents === 0 ? "Offerte" : `à partir de ${formatPrice(data.shipping.cheapestCents)}`}
                   </dd>
                 </div>
-                {data.shipping.freeThresholdCents != null && data.shipping.home != null && data.shipping.home > 0 && (
-                  <p className="text-xs text-mist">Livraison offerte dès {formatPrice(data.shipping.freeThresholdCents)} — encore {formatPrice(Math.max(0, data.shipping.freeThresholdCents - data.subtotalCents))}.</p>
+                {data.shipping.nextFreeThresholdCents != null && (
+                  <p className="text-xs text-mist">Livraison offerte dès {formatPrice(data.shipping.nextFreeThresholdCents)} — encore {formatPrice(data.shipping.nextFreeThresholdCents - data.subtotalCents)}.</p>
                 )}
                 <div className="flex justify-between border-t border-line pt-4 text-base"><dt>Total articles</dt><dd className="tabular-nums">{formatPrice(data.subtotalCents)}</dd></div>
               </dl>

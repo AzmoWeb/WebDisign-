@@ -33,11 +33,13 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   },
   store: STORE_DEFAULTS,
   shipping: {
-    homeDeliveryEnabled: true,
-    // Tarifs NON renseignés : la commande en ligne reste bloquée tant que le commerçant ne les a pas définis.
-    homeDeliveryCents: null,
-    freeShippingThresholdCents: null,
-    deliveryDelayText: null,
+    // Transporteurs indiqués par la commerçante. Tarifs NON renseignés : chaque mode reste masqué
+    // (et la commande en ligne fermée) tant que son prix n'est pas défini dans l'administration.
+    methods: [
+      { id: "colissimo-domicile", carrier: "colissimo", type: "home", label: "Colissimo — livraison à domicile", enabled: true, priceCents: null, freeFromCents: null, delayText: null },
+      { id: "mondial-relay", carrier: "mondial_relay", type: "relay", label: "Mondial Relay — livraison en point relais", enabled: true, priceCents: null, freeFromCents: null, delayText: null },
+      { id: "colissimo-relais", carrier: "colissimo", type: "relay", label: "Colissimo — bureau de poste ou relais Pickup", enabled: false, priceCents: null, freeFromCents: null, delayText: null },
+    ],
     // Le retrait en magasin n'est proposé qu'après confirmation du commerçant.
     pickupEnabled: false,
     pickupText: null,

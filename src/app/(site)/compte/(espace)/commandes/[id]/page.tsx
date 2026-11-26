@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { formatPrice } from "@/lib/money";
 import { ORDER_STATUS_LABEL } from "@/lib/order-status";
+import { shippingLabel } from "@/lib/shipping";
 import type { OrderStatus } from "@/lib/types";
 
 export const metadata = { title: "Détail de commande", robots: { index: false } };
@@ -41,8 +42,10 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
       </dl>
       <div className="mt-10 grid gap-8 sm:grid-cols-2">
         <div>
-          <p className="label text-mist">{o.shipping_method === "pickup" ? "Retrait en magasin" : "Livraison"}</p>
-          {addr && <p className="mt-2 text-sm">{addr.line1}{addr.line2 ? `, ${addr.line2}` : ""}<br />{addr.postalCode} {addr.city}</p>}
+          <p className="label text-mist">Livraison</p>
+          <p className="mt-2 text-sm">{shippingLabel(o.shipping_method, o.shipping_label)}</p>
+          {addr && <p className="mt-1 text-sm">{addr.line1}{addr.line2 ? `, ${addr.line2}` : ""}<br />{addr.postalCode} {addr.city}</p>}
+          {o.relay_point && <p className="mt-1 text-sm">Point relais : {o.relay_point}</p>}
         </div>
         <div>
           <p className="label text-mist">Suivi</p>

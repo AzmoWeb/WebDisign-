@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { ShippingSettings } from "@/lib/types";
 import { formatPrice } from "@/lib/money";
-import { computeShipping } from "@/lib/shipping";
+import { availableShipping } from "@/lib/shipping";
 import { useCart } from "./CartProvider";
 import { usePricedCart } from "./usePricedCart";
 import { ProductMedia } from "@/components/product/ProductMedia";
@@ -23,14 +23,15 @@ function Field({ label, name, error, ...props }: React.InputHTMLAttributes<HTMLI
 export function CheckoutForm({ shipping, storeLabel, paymentsEnabled, prefill }: { shipping: ShippingSettings; storeLabel: string; paymentsEnabled: boolean; prefill: Prefill }) {
   const { lines } = useCart();
   const { data, loading } = usePricedCart();
-  const homeAvailable = shipping.homeDeliveryEnabled && shipping.homeDeliveryCents != null;
-  const [method, setMethod] = useState<"home" | "pickup">(homeAvailable ? "home" : "pickup");
+  const subtotal = data?.subtotalCents ?? 0;
+  const options = availableShipping(shipping, subtotal);
+  const [methodId, setMethodId] = useState<string>(options[0]?.id ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const subtotal = data?.subtotalCents ?? 0;
-  const shippingCents = computeShipping(shipping, method, subtotal);
+  const option = options.find((o) => o.id === methodId) ?? null;
+  const shippingCents = option?.priceCents ?? null;
   const total = subtotal + (shippingCents ?? 0);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -43,8 +44,10 @@ export function CheckoutForm({ shipping, storeLabel, paymentsEnabled, prefill }:
       lastName: fd.get("lastName"),
       email: fd.get("email"),
       phone: fd.get("phone"),
-      method,
-      address: method === "home" ? { line1: fd.get("line1"), line2: fd.get("line2") || "", postalCode: fd.get("postalCode"), city: fd.get("city"), country: "FR" } : undefined,
+      method: methodId,
+      deliveryType: option?.type,
+      relayPoint: option?.type === "relay" ? fd.get("relayPoint") || "" : "",
+      address: option?.type === "home" ? { line1: fd.get("line1"), line2: fd.get("line2") || "", postalCode: fd.get("postalCode"), city: fd.get("city"), country: "FR" } : undefined,
       notes: fd.get("notes") || "",
       acceptTerms: fd.get("acceptTerms") === "on",
       lines,
@@ -110,29 +113,38 @@ export function CheckoutForm({ shipping, storeLabel, paymentsEnabled, prefill }:
           <fieldset>
             <legend className="label mb-5">Mode de livraison</legend>
             <div className="grid gap-3">
-              {homeAvailable && (
-                <label className={`flex cursor-pointer items-start gap-4 border p-5 transition-colors ${method === "home" ? "border-ink" : "border-line"}`}>
-                  <input type="radio" name="method" checked={method === "home"} onChange={() => setMethod("home")} className="mt-1 accent-ink" />
+              {options.map((o) => (
+                <label key={o.id} className={`flex cursor-pointer items-start gap-4 border p-5 transition-colors ${methodId === o.id ? "border-ink" : "border-line"}`}>
+                  <input type="radio" name="method" value={o.id} checked={methodId === o.id} onChange={() => setMethodId(o.id)} className="mt-1 accent-ink" />
                   <span className="flex-1">
-                    <span className="flex justify-between"><span>Livraison à domicile</span><span className="tabular-nums">{(() => { const c = computeShipping(shipping, "home", subtotal); return c === 0 ? "Offerte" : c != null ? formatPrice(c) : ""; })()}</span></span>
-                    {shipping.deliveryDelayText && <span className="mt-1 block text-sm text-graphite">{shipping.deliveryDelayText}</span>}
+                    <span className="flex justify-between gap-4"><span>{o.label}</span><span className="shrink-0 tabular-nums">{o.priceCents === 0 ? "Offerte" : formatPrice(o.priceCents)}</span></span>
+                    {o.type === "pickup" && <span className="mt-1 block text-sm text-graphite">{storeLabel}</span>}
+                    {o.delayText && <span className="mt-1 block text-sm text-graphite">{o.delayText}</span>}
+                    {o.freeFromCents != null && o.priceCents > 0 && <span className="mt-1 block text-xs text-mist">Offerte dès {formatPrice(o.freeFromCents)} d&apos;achat</span>}
                   </span>
                 </label>
-              )}
-              {shipping.pickupEnabled && (
-                <label className={`flex cursor-pointer items-start gap-4 border p-5 transition-colors ${method === "pickup" ? "border-ink" : "border-line"}`}>
-                  <input type="radio" name="method" checked={method === "pickup"} onChange={() => setMethod("pickup")} className="mt-1 accent-ink" />
-                  <span className="flex-1">
-                    <span className="flex justify-between"><span>Retrait en magasin</span><span>Gratuit</span></span>
-                    <span className="mt-1 block text-sm text-graphite">{storeLabel}{shipping.pickupText ? ` — ${shipping.pickupText}` : ""}</span>
-                  </span>
-                </label>
-              )}
-              {!homeAvailable && !shipping.pickupEnabled && <p className="bg-sand p-4 text-sm">Aucun mode de livraison n&apos;est encore configuré.</p>}
+              ))}
+              {!options.length && <p className="bg-sand p-4 text-sm">Aucun mode de livraison n&apos;est encore configuré.</p>}
             </div>
           </fieldset>
 
-          {method === "home" && (
+          {option?.type === "relay" && (
+            <fieldset>
+              <legend className="label mb-5">Point relais</legend>
+              <Field label="Point relais choisi (nom et adresse, ou numéro du point)" name="relayPoint" required maxLength={300} error={errors.relayPoint} />
+              <p className="mt-3 text-xs text-mist">
+                Trouvez le point le plus proche sur{" "}
+                {option.carrier === "mondial_relay" ? (
+                  <a href="https://www.mondialrelay.fr/" target="_blank" rel="noopener noreferrer" className="link-static">mondialrelay.fr</a>
+                ) : (
+                  <a href="https://localiser.laposte.fr/" target="_blank" rel="noopener noreferrer" className="link-static">localiser.laposte.fr</a>
+                )}
+                , puis indiquez-le ci-dessus.
+              </p>
+            </fieldset>
+          )}
+
+          {option?.type === "home" && (
             <fieldset>
               <legend className="label mb-5">Adresse de livraison</legend>
               <div className="grid gap-4 sm:grid-cols-6">

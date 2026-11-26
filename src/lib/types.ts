@@ -103,11 +103,24 @@ export type CampaignSettings = {
   panels: CampaignPanel[];
 };
 
+export type Carrier = "colissimo" | "mondial_relay" | "chronopost" | "autre";
+
+/** Un mode d'expédition proposé au client (transporteur + type de remise). */
+export type ShippingMethod = {
+  id: string;
+  carrier: Carrier;
+  /** home = livraison à l'adresse du client ; relay = point relais / bureau de poste */
+  type: "home" | "relay";
+  label: string;
+  enabled: boolean;
+  priceCents: number | null;
+  /** Gratuit à partir de ce montant d'achat (null = jamais). */
+  freeFromCents: number | null;
+  delayText: string | null;
+};
+
 export type ShippingSettings = {
-  homeDeliveryEnabled: boolean;
-  homeDeliveryCents: number | null;
-  freeShippingThresholdCents: number | null;
-  deliveryDelayText: string | null;
+  methods: ShippingMethod[];
   pickupEnabled: boolean;
   pickupText: string | null;
 };

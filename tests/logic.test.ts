@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { computeShipping, shippingReady } from "../src/lib/shipping";
+import { availableShipping, computeShipping, PICKUP_ID, shippingReady } from "../src/lib/shipping";
+import type { ShippingSettings } from "../src/lib/types";
 import { applyFilters, parseSearchParams } from "../src/lib/catalog-filters";
 import { DEMO_PRODUCTS } from "../src/lib/demo-data";
 import { effectivePrice, discountPercent } from "../src/lib/money";
@@ -8,14 +9,27 @@ import { parseConsent, CONSENT_POLICY_VERSION } from "../src/lib/consent";
 import { CheckoutSchema } from "../src/lib/checkout-schema";
 import { safeJson } from "../src/lib/seo";
 
-const ship = { homeDeliveryEnabled: true, homeDeliveryCents: 590, freeShippingThresholdCents: 8000, deliveryDelayText: null, pickupEnabled: false, pickupText: null };
+const ship: ShippingSettings = {
+  methods: [
+    { id: "colissimo-domicile", carrier: "colissimo", type: "home", label: "Colissimo", enabled: true, priceCents: 690, freeFromCents: 8000, delayText: null },
+    { id: "mondial-relay", carrier: "mondial_relay", type: "relay", label: "Mondial Relay", enabled: true, priceCents: 450, freeFromCents: null, delayText: null },
+    { id: "chronopost", carrier: "chronopost", type: "home", label: "Chrono", enabled: false, priceCents: 1500, freeFromCents: null, delayText: null },
+    { id: "colissimo-relais", carrier: "colissimo", type: "relay", label: "Relais", enabled: true, priceCents: null, freeFromCents: null, delayText: null },
+  ],
+  pickupEnabled: false,
+  pickupText: null,
+};
 
-test("frais de livraison : tarif, gratuité, retrait non confirmé", () => {
-  assert.equal(computeShipping(ship, "home", 5000), 590);
-  assert.equal(computeShipping(ship, "home", 8000), 0);
-  assert.equal(computeShipping(ship, "pickup", 5000), null);
-  assert.equal(computeShipping({ ...ship, pickupEnabled: true }, "pickup", 5000), 0);
-  assert.equal(shippingReady({ ...ship, homeDeliveryCents: null }), false);
+test("livraison multi-transporteurs : tarifs, gratuité, modes non configurés", () => {
+  assert.equal(computeShipping(ship, "colissimo-domicile", 5000), 690);
+  assert.equal(computeShipping(ship, "colissimo-domicile", 8000), 0);
+  assert.equal(computeShipping(ship, "mondial-relay", 9000), 450);
+  assert.equal(computeShipping(ship, "chronopost", 5000), null, "mode désactivé");
+  assert.equal(computeShipping(ship, "colissimo-relais", 5000), null, "mode sans tarif");
+  assert.equal(computeShipping(ship, PICKUP_ID, 5000), null, "retrait non confirmé");
+  assert.equal(computeShipping({ ...ship, pickupEnabled: true }, PICKUP_ID, 5000), 0);
+  assert.deepEqual(availableShipping(ship, 0).map((o) => o.id), ["colissimo-domicile", "mondial-relay"]);
+  assert.equal(shippingReady({ ...ship, methods: ship.methods.map((m) => ({ ...m, priceCents: null })) }), false);
 });
 
 test("prix promotionnel", () => {
@@ -56,11 +70,15 @@ test("consentement : version, expiration et format", () => {
 });
 
 test("validation du formulaire de commande", () => {
-  const base = { firstName: "Ana", lastName: "B", email: "ana@x.fr", phone: "06 00 00 00 00", method: "home", acceptTerms: true, lines: [{ productId: "p", variantId: "v", quantity: 1 }] };
+  const base = { firstName: "Ana", lastName: "B", email: "ana@x.fr", phone: "06 00 00 00 00", method: "colissimo-domicile", deliveryType: "home", acceptTerms: true, lines: [{ productId: "p", variantId: "v", quantity: 1 }] };
+  const relay = { ...base, method: "mondial-relay", deliveryType: "relay" };
   assert.equal(CheckoutSchema.safeParse(base).success, false); // adresse manquante
   assert.equal(CheckoutSchema.safeParse({ ...base, address: { line1: "1 rue", postalCode: "10110", city: "Bar-sur-Seine", country: "FR" } }).success, true);
-  assert.equal(CheckoutSchema.safeParse({ ...base, method: "pickup", acceptTerms: false }).success, false);
-  assert.equal(CheckoutSchema.safeParse({ ...base, method: "pickup", lines: [{ productId: "p", variantId: "v", quantity: 99 }] }).success, false);
+  assert.equal(CheckoutSchema.safeParse(relay).success, false); // point relais manquant
+  assert.equal(CheckoutSchema.safeParse({ ...relay, relayPoint: "Tabac de la Gare, Bar-sur-Seine" }).success, true);
+  assert.equal(CheckoutSchema.safeParse({ ...relay, method: "<script>", relayPoint: "Tabac de la Gare" }).success, false);
+  assert.equal(CheckoutSchema.safeParse({ ...relay, relayPoint: "Tabac de la Gare", acceptTerms: false }).success, false);
+  assert.equal(CheckoutSchema.safeParse({ ...relay, relayPoint: "Tabac de la Gare", lines: [{ productId: "p", variantId: "v", quantity: 99 }] }).success, false);
 });
 
 test("JSON-LD protégé contre l'injection de balise", () => {

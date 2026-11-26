@@ -8,7 +8,10 @@ export const CheckoutSchema = z
     lastName: text(80),
     email: z.string().trim().toLowerCase().email("Adresse e-mail invalide").max(160),
     phone: z.string().trim().regex(/^[+0-9 ().-]{8,20}$/, "Numéro de téléphone invalide"),
-    method: z.enum(["home", "pickup"]),
+    method: z.string().regex(/^[a-z0-9-]{2,40}$/, "Mode de livraison invalide"),
+    // Type déclaré par le formulaire ; le serveur le recontrôle avec les réglages
+    deliveryType: z.enum(["home", "relay", "pickup"]),
+    relayPoint: z.string().trim().max(300).optional().default(""),
     address: z
       .object({
         line1: z.string().trim().max(160),
@@ -26,7 +29,9 @@ export const CheckoutSchema = z
       .max(30),
   })
   .superRefine((v, ctx) => {
-    if (v.method === "home") {
+    if (v.deliveryType === "relay" && v.relayPoint.length < 5)
+      ctx.addIssue({ code: "custom", path: ["relayPoint"], message: "Indiquez le point relais choisi" });
+    if (v.deliveryType === "home") {
       if (!v.address?.line1) ctx.addIssue({ code: "custom", path: ["address", "line1"], message: "Adresse requise" });
       if (!/^\d{5}$/.test(v.address?.postalCode ?? "")) ctx.addIssue({ code: "custom", path: ["address", "postalCode"], message: "Code postal invalide" });
       if (!v.address?.city) ctx.addIssue({ code: "custom", path: ["address", "city"], message: "Ville requise" });

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProductBySlug, getRelated } from "@/lib/catalog";
 import { getSettings } from "@/lib/settings";
-import { formatPrice } from "@/lib/money";
+import { ShippingList } from "@/components/ui/ShippingList";
 import { productJsonLd } from "@/lib/seo";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { Price } from "@/components/product/Price";
@@ -69,16 +69,7 @@ export default async function ProductPage({ params }: Props) {
               Livraison & retrait <span className="text-lg transition-transform group-open:rotate-45" aria-hidden="true">+</span>
             </summary>
             <ul className="mt-4 space-y-2 text-sm leading-relaxed text-graphite">
-              {sh.homeDeliveryEnabled && sh.homeDeliveryCents != null ? (
-                <li>
-                  Livraison à domicile : {sh.homeDeliveryCents === 0 ? "offerte" : formatPrice(sh.homeDeliveryCents)}
-                  {sh.freeShippingThresholdCents != null && sh.homeDeliveryCents > 0 && `, offerte dès ${formatPrice(sh.freeShippingThresholdCents)} d'achat`}
-                  {sh.deliveryDelayText && ` — ${sh.deliveryDelayText}`}
-                </li>
-              ) : (
-                <li>Les conditions de livraison seront communiquées prochainement.</li>
-              )}
-              {sh.pickupEnabled && <li>Retrait en magasin à {settings.store.city}{sh.pickupText ? ` — ${sh.pickupText}` : ""}</li>}
+              <ShippingList shipping={sh} city={settings.store.city} />
               <li>
                 <Link href="/livraison" className="link-static">Politique de livraison</Link> · <Link href="/retours" className="link-static">Retours</Link>
               </li>

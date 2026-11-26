@@ -1,3 +1,4 @@
+import { shippingLabel } from "@/lib/shipping";
 import Link from "next/link";
 import { adminPage } from "@/lib/auth";
 import { formatPrice } from "@/lib/money";
@@ -10,7 +11,7 @@ export const metadata = { title: "Commandes" };
 export default async function OrdersAdmin({ searchParams }: { searchParams: Promise<{ statut?: string; q?: string }> }) {
   const { sb } = await adminPage();
   const sp = await searchParams;
-  let q = sb.from("orders").select("id, order_number, first_name, last_name, email, total_cents, status, payment_status, shipping_method, created_at").order("created_at", { ascending: false }).limit(200);
+  let q = sb.from("orders").select("id, order_number, first_name, last_name, email, total_cents, status, payment_status, shipping_method, shipping_label, created_at").order("created_at", { ascending: false }).limit(200);
   if (sp.statut && sp.statut in ORDER_STATUS_LABEL) q = q.eq("status", sp.statut);
   if (sp.q) {
     const term = sp.q.replace(/[%_,()]/g, "").slice(0, 60);
@@ -40,7 +41,7 @@ export default async function OrdersAdmin({ searchParams }: { searchParams: Prom
                   <td className="p-3"><Link href={`/admin/commandes/${o.id}`} className="font-medium hover:underline">{o.order_number}</Link></td>
                   <td className="text-graphite">{new Date(o.created_at).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}</td>
                   <td>{o.first_name} {o.last_name}<span className="block text-xs text-mist">{o.email}</span></td>
-                  <td>{o.shipping_method === "pickup" ? "Retrait" : "Domicile"}</td>
+                  <td className="max-w-[12rem] truncate">{shippingLabel(o.shipping_method, o.shipping_label)}</td>
                   <td><StatusBadge status={o.status} label={ORDER_STATUS_LABEL[o.status as OrderStatus]} /></td>
                   <td className="pr-3 text-right tabular-nums">{formatPrice(o.total_cents)}</td>
                 </tr>
