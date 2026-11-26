@@ -8,6 +8,8 @@ import { ADMIN_TRANSITIONS } from "@/lib/order-status";
 import type { OrderStatus } from "@/lib/types";
 import { SETTINGS_KEYS, type SettingsKey } from "@/lib/settings";
 import { sendEmail } from "@/lib/email";
+import { env } from "@/lib/env";
+import { supabaseService } from "@/lib/supabase/admin";
 import type { FormState } from "@/app/actions/auth";
 
 /* Toutes les actions ci-dessous revérifient le rôle administrateur côté serveur (assertAdmin),
@@ -117,17 +119,43 @@ export async function saveVariantsAction(productId: string, rows: unknown): Prom
     if (keys.has(k)) return { error: `Doublon : ${v.color} pointure ${v.size}.` };
     keys.add(k);
   }
-  const { data: existing } = await sb.from("product_variants").select("id").eq("product_id", pid);
+  const { data: existing } = await sb.from("product_variants").select("id, stock").eq("product_id", pid);
+  const previousStock = new Map(((existing ?? []) as { id: string; stock: number }[]).map((e) => [e.id, e.stock]));
   const keep = new Set(parsed.data.filter((v) => v.id).map((v) => v.id));
-  const toDelete = (existing ?? []).map((e: { id: string }) => e.id).filter((id: string) => !keep.has(id));
+  const toDelete = [...previousStock.keys()].filter((id) => !keep.has(id));
   if (toDelete.length) await sb.from("product_variants").delete().in("id", toDelete);
+  const restocked: string[] = [];
   for (const v of parsed.data) {
     const row = { product_id: pid, color: v.color, color_hex: v.color_hex, size: v.size, stock: v.stock, sku: v.sku || null };
     const { error } = v.id ? await sb.from("product_variants").update(row).eq("id", v.id).eq("product_id", pid) : await sb.from("product_variants").insert(row);
     if (error) return { error: `Erreur sur ${v.color} ${v.size} : ${error.code === "23505" ? "doublon" : "enregistrement impossible"}.` };
+    if (v.id && previousStock.get(v.id) === 0 && v.stock > 0) restocked.push(v.id);
   }
+  const sent = restocked.length ? await notifyRestock(sb, pid, restocked) : 0;
   refreshShop();
-  return { ok: true, message: "Pointures et stocks enregistrés." };
+  return { ok: true, message: `Pointures et stocks enregistrés.${sent ? ` ${sent} client(s) prévenu(s) du retour en stock.` : ""}` };
+}
+
+/** Envoie les alertes « retour en stock » en attente pour les pointures réapprovisionnées. */
+async function notifyRestock(sb: Awaited<ReturnType<typeof assertAdmin>>["sb"], productId: string, variantIds: string[]) {
+  const [{ data: alerts }, { data: product }, { data: variants }] = await Promise.all([
+    sb.from("stock_alerts").select("id, email, variant_id").in("variant_id", variantIds).is("notified_at", null),
+    sb.from("products").select("name, brand, slug, active").eq("id", productId).single(),
+    sb.from("product_variants").select("id, size, color").in("id", variantIds),
+  ]);
+  if (!alerts?.length || !product?.active) return 0;
+  let sent = 0;
+  for (const a of alerts as { id: string; email: string; variant_id: string }[]) {
+    const v = (variants ?? []).find((x: { id: string }) => x.id === a.variant_id) as { size: string; color: string } | undefined;
+    const ok = await sendEmail(a.email, `De retour en stock : ${product.name}`,
+      `Bonjour,\n\nBonne nouvelle : ${product.name}${product.brand ? ` (${product.brand})` : ""} en pointure ${v?.size ?? ""}${v?.color ? `, coloris ${v.color}` : ""} est de nouveau disponible.\n\n${env.siteUrl}/produit/${product.slug}\n\nLes quantités sont limitées. Vous pouvez aussi la réserver et la payer au magasin.\n\nAux Jolis Pas — 110 Grande Rue de la Résistance, 10110 Bar-sur-Seine — 03 25 29 86 32`);
+    // L'alerte n'est clôturée que si l'e-mail est réellement parti
+    if (ok) {
+      await sb.from("stock_alerts").update({ notified_at: new Date().toISOString() }).eq("id", a.id);
+      sent++;
+    }
+  }
+  return sent;
 }
 
 /* -------------------------------- IMAGES -------------------------------- */
@@ -287,6 +315,8 @@ const SETTING_SCHEMAS: Record<SettingsKey, z.ZodTypeAny> = {
   }),
   reviews: z.object({ manualRating: z.number().min(1).max(5).nullable(), manualCount: z.number().int().min(0).nullable(), manualCheckedAt: z.string().max(30).nullable() }),
   storeIntro: z.object({ title: z.string().trim().max(120), text: z.string().trim().max(1500), imageUrl: img }),
+  promoBanner: z.object({ kicker: z.string().trim().max(40), title: z.string().trim().min(1).max(80), text: z.string().trim().max(300), ctaLabel: z.string().trim().max(40), ctaHref: href, highlight: z.boolean() }),
+  reservation: z.object({ enabled: z.boolean(), holdHours: z.number().int().min(2).max(720) }),
 };
 
 function sanitizeSetting(key: SettingsKey, value: unknown): { value: unknown } | { error: string } {
@@ -360,4 +390,97 @@ export async function updateMessageAction(fd: FormData) {
   const status = z.enum(["new", "in_progress", "closed"]).parse(fd.get("status"));
   await sb.from("contact_messages").update({ status }).eq("id", uuid.parse(fd.get("id")));
   revalidatePath("/admin/messages");
+}
+
+/* --------------------------- CODES PROMO & SOLDES ------------------------ */
+
+export async function savePromoCodeAction(_: FormState, fd: FormData): Promise<FormState> {
+  const { sb } = await assertAdmin();
+  const kind = fd.get("kind") === "amount" ? "amount" : "percent";
+  const rawValue = String(fd.get("value") ?? "").replace(",", ".");
+  const parsed = z
+    .object({
+      code: z.string().trim().toUpperCase().regex(/^[A-Z0-9_-]{3,30}$/, "Code : 3 à 30 lettres, chiffres, - ou _"),
+      value: z.number().int().positive("Valeur invalide"),
+      min_subtotal_cents: z.number().int().min(0),
+      starts_at: z.string().nullable(),
+      ends_at: z.string().nullable(),
+      max_uses: z.number().int().positive().nullable(),
+      description: z.string().trim().max(200).nullable(),
+      active: z.boolean(),
+    })
+    .safeParse({
+      code: String(fd.get("code") ?? "").replace(/\s+/g, ""),
+      value: kind === "percent" ? Math.round(Number(rawValue)) : Math.round(Number(rawValue) * 100),
+      min_subtotal_cents: Math.round(Number(String(fd.get("min") || "0").replace(",", ".")) * 100) || 0,
+      starts_at: fd.get("starts_at") ? new Date(String(fd.get("starts_at"))).toISOString() : null,
+      ends_at: fd.get("ends_at") ? new Date(`${fd.get("ends_at")}T23:59:59`).toISOString() : null,
+      max_uses: fd.get("max_uses") ? Number(fd.get("max_uses")) : null,
+      description: String(fd.get("description") ?? "").trim() || null,
+      active: fd.get("active") === "on",
+    });
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (kind === "percent" && parsed.data.value > 90) return { error: "La remise ne peut pas dépasser 90 %." };
+  const { error } = await sb.from("promo_codes").insert({ ...parsed.data, kind });
+  if (error) return { error: error.code === "23505" ? "Ce code existe déjà." : "Enregistrement impossible." };
+  revalidatePath("/admin/promotions");
+  return { ok: true, message: `Code ${parsed.data.code} créé.` };
+}
+
+export async function togglePromoCodeAction(fd: FormData) {
+  const { sb } = await assertAdmin();
+  await sb.from("promo_codes").update({ active: fd.get("active") === "true" }).eq("id", uuid.parse(fd.get("id")));
+  revalidatePath("/admin/promotions");
+}
+
+export async function deletePromoCodeAction(fd: FormData) {
+  const { sb } = await assertAdmin();
+  await sb.from("promo_codes").delete().eq("id", uuid.parse(fd.get("id")));
+  revalidatePath("/admin/promotions");
+}
+
+/** Soldes en un clic : applique (ou retire) un pourcentage de remise sur toute une sélection de produits. */
+export async function bulkSaleAction(_: FormState, fd: FormData): Promise<FormState> {
+  const { sb } = await assertAdmin();
+  const op = fd.get("op") === "remove" ? "remove" : "apply";
+  const scope = String(fd.get("scope") ?? "all");
+  const percent = Math.round(Number(fd.get("percent")));
+  if (op === "apply" && !(percent >= 5 && percent <= 80)) return { error: "Indiquez une remise entre 5 et 80 %." };
+
+  let query = sb.from("products").select("id, price_cents, category_id, gender");
+  if (scope === "femme" || scope === "homme") query = query.eq("gender", scope);
+  else if (scope.startsWith("cat:")) query = query.eq("category_id", uuid.parse(scope.slice(4)));
+  else if (scope !== "all") return { error: "Sélection invalide." };
+  const { data, error } = await query;
+  if (error || !data) return { error: "Lecture des produits impossible." };
+
+  let n = 0;
+  for (const p of data as { id: string; price_cents: number }[]) {
+    const sale = op === "apply" ? Math.round((p.price_cents * (100 - percent)) / 100) : null;
+    if (sale != null && (sale <= 0 || sale >= p.price_cents)) continue;
+    const { error: e } = await sb.from("products").update({ sale_price_cents: sale }).eq("id", p.id);
+    if (!e) n++;
+  }
+  refreshShop();
+  return { ok: true, message: op === "apply" ? `Remise de ${percent} % appliquée à ${n} produit(s).` : `Promotion retirée de ${n} produit(s).` };
+}
+
+/* ------------------------------ RÉSERVATIONS ----------------------------- */
+
+export async function updateReservationAction(fd: FormData) {
+  await assertAdmin();
+  const id = uuid.parse(fd.get("id"));
+  const status = z.enum(["ready", "collected", "cancelled"]).parse(fd.get("status"));
+  // Changement de statut + remise en stock éventuelle : fonction SQL réservée au serveur
+  const service = supabaseService();
+  if (!service) return;
+  const { data: result } = await service.rpc("set_reservation_status", { p_id: id, p_status: status });
+  if (result === "ok" && status === "ready") {
+    const { data: r } = await service.from("reservations").select("reservation_number, first_name, email, product_name, size, color").eq("id", id).single();
+    if (r)
+      await sendEmail(r.email, `Votre réservation ${r.reservation_number} vous attend`,
+        `Bonjour ${r.first_name},\n\n${r.product_name} — ${r.color}, pointure ${r.size} est prête au magasin.\n\nAux Jolis Pas — 110 Grande Rue de la Résistance, 10110 Bar-sur-Seine — 03 25 29 86 32\nDu mardi au samedi, 9h30–12h et 14h30–19h.`);
+  }
+  revalidatePath("/admin/reservations");
+  refreshShop();
 }

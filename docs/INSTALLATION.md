@@ -41,7 +41,7 @@ Le rôle administrateur ne peut être attribué qu'en SQL : aucune interface du 
    - Événements : `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`, `charge.refunded`
    - Copiez le *secret de signature* (`whsec_…`) dans `STRIPE_WEBHOOK_SECRET`.
 3. En local : `stripe listen --forward-to localhost:3000/api/stripe/webhook` fournit un secret `whsec_` temporaire.
-4. Codes promotionnels : créez-les dans **Produits → Coupons** ; ils sont saisis par le client sur la page de paiement Stripe.
+4. Codes promotionnels : ils se créent dans **Administration → Promotions** (pas dans Stripe). Le serveur calcule la remise et la transmet à Stripe sous forme de coupon à usage unique.
 5. Moyens de paiement : **Paramètres → Moyens de paiement** (carte bancaire, etc.).
 
 Une commande n'est marquée « payée » **que** par le webhook signé, après vérification que le montant encaissé correspond au total calculé par le serveur. La page de confirmation n'écrit rien.
@@ -61,6 +61,8 @@ Copiez `.env.example` et renseignez les valeurs (chez l'hébergeur en production
 | `NEXT_PUBLIC_META_PIXEL_ID` | non | Meta Pixel, chargé seulement après consentement « marketing » |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | non | Cloudflare Turnstile sur le formulaire de contact |
 | `RESEND_API_KEY` / `EMAIL_FROM` / `STORE_NOTIFICATION_EMAIL` | non | e-mails de confirmation de commande et notifications au magasin |
+| `ADMIN_EMAIL` | oui | e-mail du compte qui devient administrateur à sa 1re connexion (une fois confirmé) |
+| `CRON_SECRET` | conseillé | chaîne aléatoire : active la remise en vente automatique des réservations expirées (`vercel.json`) |
 | `IP_HASH_SALT` | oui | chaîne aléatoire longue (hachage des IP anti-spam) |
 
 Aucune clé secrète n'est préfixée `NEXT_PUBLIC_` : elles ne quittent jamais le serveur.

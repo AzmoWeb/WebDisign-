@@ -40,7 +40,7 @@ export default async function HomePage() {
     getProducts({ collection: "promotions" }),
     getReviews(settings),
   ]);
-  const { hero, campaign, storeIntro, store } = settings;
+  const { hero, campaign, storeIntro, store, promoBanner } = settings;
 
   return (
     <>
@@ -72,16 +72,16 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 1. GRANDE BANNIÈRE */}
-      <section className="container-site mt-20 md:mt-28" aria-label="Promotions en cours">
-        <Link href="/promotions" className="group relative block overflow-hidden bg-ink text-ivory">
+      {/* 1. GRANDE BANNIÈRE (promotions / soldes, modifiable dans l'administration) */}
+      <section className="container-site mt-20 md:mt-28" aria-label={promoBanner.title}>
+        <Link href={promoBanner.ctaHref} className={`group relative block overflow-hidden text-ivory ${promoBanner.highlight ? "bg-oxblood" : "bg-ink"}`}>
           <div className="grid md:grid-cols-2">
             <div className="relative order-2 flex flex-col justify-center px-7 py-12 md:order-1 md:px-14 md:py-20">
-              <p className="label text-ivory/60">Sélection</p>
-              <p className="display mt-4 text-[2.4rem] leading-[1.02] md:text-[3.5rem]">Promotions</p>
-              <p className="mt-5 max-w-sm text-ivory/70">Une sélection de modèles femme et homme à prix réduits, dans la limite des stocks disponibles.</p>
+              {promoBanner.kicker && <p className="label text-ivory/70">{promoBanner.kicker}</p>}
+              <p className={`display mt-4 leading-[1.02] ${promoBanner.highlight ? "text-[3rem] uppercase md:text-[4.5rem]" : "text-[2.4rem] md:text-[3.5rem]"}`}>{promoBanner.title}</p>
+              {promoBanner.text && <p className="mt-5 max-w-sm text-ivory/75">{promoBanner.text}</p>}
               <span className="mt-8 inline-flex items-center gap-3 text-xs tracking-[0.18em] uppercase">
-                Voir les promotions <IconArrow className="h-4 w-4 transition-transform duration-500 group-hover:translate-x-1.5" />
+                {promoBanner.ctaLabel} <IconArrow className="h-4 w-4 transition-transform duration-500 group-hover:translate-x-1.5" />
               </span>
             </div>
             <div className="relative order-1 aspect-[16/10] overflow-hidden md:order-2 md:aspect-auto md:min-h-[26rem]">

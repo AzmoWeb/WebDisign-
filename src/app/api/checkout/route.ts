@@ -3,6 +3,7 @@ import { CheckoutSchema } from "@/lib/checkout-schema";
 import { priceCart } from "@/lib/cart-pricing";
 import { getSettings } from "@/lib/settings";
 import { findShipping } from "@/lib/shipping";
+import { checkPromo } from "@/lib/promo-server";
 import { supabaseService } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe";
 import { getCurrentUser } from "@/lib/auth";
@@ -42,6 +43,14 @@ export async function POST(req: Request) {
   const shippingCents = option.priceCents;
   const totalCents = cart.subtotalCents + shippingCents;
 
+  // Code promo : revérifié et recalculé ici (le montant affiché dans le navigateur n'est jamais repris)
+  let promo: { code: string; discountCents: number } | null = null;
+  if (input.promoCode) {
+    const r = await checkPromo(input.promoCode, cart.subtotalCents);
+    if (!r.ok) return fail(r.reason);
+    promo = { code: r.code, discountCents: r.discountCents };
+  }
+
   const { data: order, error } = await sb
     .from("orders")
     .insert({
@@ -58,6 +67,8 @@ export async function POST(req: Request) {
       subtotal_cents: cart.subtotalCents,
       shipping_cents: shippingCents,
       total_cents: totalCents,
+      promo_code: promo?.code ?? null,
+      expected_discount_cents: promo?.discountCents ?? 0,
     })
     .select("id, order_number")
     .single();
@@ -87,6 +98,10 @@ export async function POST(req: Request) {
   await sb.from("order_events").insert({ order_id: order.id, status: "pending", note: "Commande créée, en attente de paiement" });
 
   try {
+    // Remise appliquée via un coupon Stripe à usage unique, du montant calculé par le serveur
+    const coupon = promo
+      ? await stripe.coupons.create({ amount_off: promo.discountCents, currency: "eur", duration: "once", max_redemptions: 1, name: `Code ${promo.code}`.slice(0, 40) })
+      : null;
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       locale: "fr",
@@ -94,7 +109,7 @@ export async function POST(req: Request) {
       client_reference_id: order.id,
       metadata: { order_id: order.id, order_number: order.order_number },
       payment_intent_data: { metadata: { order_id: order.id, order_number: order.order_number } },
-      allow_promotion_codes: true,
+      ...(coupon ? { discounts: [{ coupon: coupon.id }] } : {}),
       expires_at: Math.floor(Date.now() / 1000) + 60 * 45,
       line_items: cart.lines.map((l) => ({
         quantity: l.quantity,

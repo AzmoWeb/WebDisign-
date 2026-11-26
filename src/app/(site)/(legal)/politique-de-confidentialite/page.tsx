@@ -15,6 +15,10 @@ export default function Page() {
       <h3>Commandes</h3>
       <p>Identité, coordonnées, adresse de livraison, contenu et montant de la commande. Finalités : traitement, livraison, service après-vente, obligations comptables. Base légale : exécution du contrat et obligation légale. Conservation : <Todo>durée — les pièces comptables sont conservées 10 ans</Todo>.</p>
       <p>Les données de carte bancaire sont saisies directement sur la page sécurisée de Stripe et ne sont jamais transmises ni stockées par {S.name}.</p>
+      <h3>Réservations en magasin</h3>
+      <p>Nom, prénom, e-mail, téléphone et article réservé. Finalité : mettre l&apos;article de côté et vous prévenir. Base légale : mesures précontractuelles à votre demande. Conservation : <Todo>durée, par exemple 1 an</Todo>.</p>
+      <h3>Alertes de retour en stock</h3>
+      <p>Adresse e-mail et pointure demandée. Finalité : vous envoyer un unique e-mail lorsque la pointure revient en stock. Base légale : votre demande. L&apos;alerte est close après l&apos;envoi.</p>
       <h3>Formulaire de contact</h3>
       <p>Nom, e-mail, téléphone (facultatif), message. Finalité : répondre à votre demande. Base légale : votre consentement / intérêt légitime. Conservation : <Todo>durée, par exemple 3 ans</Todo>. Une empreinte non réversible de l&apos;adresse IP est conservée pour lutter contre le spam.</p>
       <h3>Consentement aux cookies</h3>

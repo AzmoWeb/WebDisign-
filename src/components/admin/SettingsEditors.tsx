@@ -279,3 +279,38 @@ export function ReviewsSettingsEditor({ initial }: { initial: SiteSettings["revi
     </div>
   );
 }
+
+export function PromoBannerEditor({ initial }: { initial: SiteSettings["promoBanner"] }) {
+  const s = useSaver("promoBanner", initial);
+  const v = s.value;
+  const up = (p: Partial<SiteSettings["promoBanner"]>) => s.setValue({ ...v, ...p });
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      <div className="flex flex-wrap gap-2 md:col-span-2">
+        <button type="button" className="border border-line px-3 py-1.5 text-xs hover:border-ink" onClick={() => up({ kicker: "Jusqu'à épuisement des stocks", title: "Soldes −30 %", text: "Profitez de −30 % sur une sélection de chaussures femme et homme.", ctaLabel: "J'en profite", ctaHref: "/promotions", highlight: true })}>Modèle « Soldes »</button>
+        <button type="button" className="border border-line px-3 py-1.5 text-xs hover:border-ink" onClick={() => up({ kicker: "Sélection", title: "Promotions", text: "Une sélection de modèles femme et homme à prix réduits, dans la limite des stocks disponibles.", ctaLabel: "Voir les promotions", ctaHref: "/promotions", highlight: false })}>Modèle « Promotions »</button>
+      </div>
+      <T label="Surtitre" value={v.kicker} max={40} onChange={(t) => up({ kicker: t })} />
+      <T label="Titre (ex. Soldes −30 %)" value={v.title} max={80} onChange={(t) => up({ title: t })} />
+      <div className="md:col-span-2"><T label="Texte" value={v.text} max={300} area onChange={(t) => up({ text: t })} /></div>
+      <T label="Bouton" value={v.ctaLabel} max={40} onChange={(t) => up({ ctaLabel: t })} />
+      <T label="Lien" value={v.ctaHref} max={300} onChange={(t) => up({ ctaHref: t })} />
+      <label className="flex items-center gap-2 text-sm md:col-span-2"><input type="checkbox" checked={v.highlight} onChange={(e) => up({ highlight: e.target.checked })} className="accent-ink" /> Style « soldes » (fond bordeaux, grand titre)</label>
+      <p className="text-xs text-mist md:col-span-2">Pensez aussi au bandeau tout en haut du site (Contenus du site → Bandeau supérieur).</p>
+      <div className="md:col-span-2"><SaveBar {...s} /></div>
+    </div>
+  );
+}
+
+export function ReservationEditor({ initial }: { initial: SiteSettings["reservation"] }) {
+  const s = useSaver("reservation", initial);
+  const v = s.value;
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <label className="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" checked={v.enabled} onChange={(e) => s.setValue({ ...v, enabled: e.target.checked })} className="accent-ink" /> Proposer « Réserver en magasin » sur les fiches produit</label>
+      <label className="block"><span className="field-label">Durée de mise de côté (heures)</span><input type="number" min={2} max={720} value={v.holdHours} onChange={(e) => s.setValue({ ...v, holdHours: Number(e.target.value) || 48 })} className="field" /></label>
+      <p className="self-end text-xs text-mist">Passé ce délai, la paire est automatiquement remise en vente.</p>
+      <div className="sm:col-span-2"><SaveBar {...s} /></div>
+    </div>
+  );
+}

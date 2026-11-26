@@ -144,6 +144,29 @@ await run("Fiche produit : pointure obligatoire, ajout au panier, panier", async
   await page.getByText("Votre panier est vide.").waitFor();
 }, consented);
 
+await run("Fiche produit : réserver en magasin et alerte retour en stock", async (page) => {
+  await page.goto(BASE + "/produit/bottine-a-talon-bloc-femme-demo");
+  // Réservation : pointure obligatoire
+  await page.getByTestId("reserve-in-store").click();
+  await page.getByText("Choisissez d'abord votre pointure.").waitFor();
+  await page.locator('[role=radio]:not([disabled])').first().click();
+  await page.getByTestId("reserve-in-store").click();
+  const dlg = page.getByRole("dialog", { name: "Nous la gardons pour vous" });
+  await dlg.waitFor();
+  await dlg.getByLabel("Prénom").fill("Ana");
+  await dlg.getByLabel("Nom", { exact: true }).fill("Test");
+  await dlg.getByLabel("E-mail").fill("ana@example.fr");
+  await dlg.getByLabel("Téléphone").fill("0600000000");
+  await dlg.getByRole("checkbox").check();
+  await dlg.getByRole("button", { name: "Confirmer la réservation" }).click();
+  // Mode démonstration : aucune réservation réelle n'est créée
+  await dlg.getByText("disponible dès la mise en ligne").waitFor();
+  await page.keyboard.press("Escape");
+  // Alerte retour en stock sur une pointure épuisée
+  await page.getByText("Votre pointure est épuisée ? Être prévenu(e) de son retour").click();
+  await page.getByRole("button", { name: "Me prévenir" }).waitFor();
+}, consented);
+
 // ---------------- MOBILE ----------------
 await run("Mobile : pas de débordement horizontal", async (page) => {
   for (const path of ["/", "/femme", "/produit/basket-cuir-epuree-homme-demo", "/panier", "/notre-magasin", "/contact", "/compte/connexion", "/politique-cookies"]) {

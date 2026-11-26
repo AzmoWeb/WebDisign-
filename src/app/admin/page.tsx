@@ -10,13 +10,15 @@ export const metadata = { title: "Tableau de bord" };
 export default async function Dashboard() {
   const { sb } = await adminPage();
   const since = new Date(Date.now() - 30 * 86400000).toISOString();
-  const [products, variants, orders, recent, paid30, newMessages, topItems] = await Promise.all([
+  const [products, variants, orders, recent, paid30, newMessages, openReservations, pendingAlerts, topItems] = await Promise.all([
     sb.from("products").select("id, active", { count: "exact" }),
     sb.from("product_variants").select("product_id, stock"),
     sb.from("orders").select("status, payment_status, total_cents, discount_cents"),
     sb.from("orders").select("id, order_number, first_name, last_name, total_cents, status, created_at").order("created_at", { ascending: false }).limit(8),
     sb.from("orders").select("paid_at, amount_paid_cents").eq("payment_status", "paid").gte("paid_at", since),
     sb.from("contact_messages").select("id", { count: "exact", head: true }).eq("status", "new"),
+    sb.from("reservations").select("id", { count: "exact", head: true }).in("status", ["pending", "ready"]),
+    sb.from("stock_alerts").select("id", { count: "exact", head: true }).is("notified_at", null),
     sb.from("order_items").select("name, quantity, order:orders!inner(payment_status)").eq("order.payment_status", "paid").limit(2000),
   ]);
 
@@ -54,7 +56,8 @@ export default async function Dashboard() {
     { label: "À traiter", value: String(toProcess), sub: "payées, à préparer", href: "/admin/commandes?statut=paid" },
     { label: "Chiffre d'affaires", value: formatPrice(revenue), sub: "commandes payées", href: "/admin/commandes?statut=paid" },
     { label: "Ruptures", value: String(outOfStock), sub: `${outOfStockSizes} pointures épuisées`, href: "/admin/produits?stock=rupture" },
-    { label: "Messages", value: String(newMessages.count ?? 0), sub: "non lus", href: "/admin/messages" },
+    { label: "Réservations", value: String(openReservations.count ?? 0), sub: "paires à garder de côté", href: "/admin/reservations" },
+    { label: "Messages", value: String(newMessages.count ?? 0), sub: `non lus · ${pendingAlerts.count ?? 0} alertes stock`, href: "/admin/messages" },
   ];
 
   return (
@@ -62,7 +65,7 @@ export default async function Dashboard() {
       <PageTitle kicker="Vue d'ensemble" title="Tableau de bord">
         <Link href="/admin/produits/nouveau" className="btn btn-primary">Ajouter un produit</Link>
       </PageTitle>
-      <div className="grid grid-cols-2 gap-px bg-line md:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-px bg-line md:grid-cols-4 xl:grid-cols-7">
         {kpis.map((k) => (
           <Link key={k.label} href={k.href} className="bg-paper p-5 transition-colors hover:bg-white">
             <p className="text-xs text-mist">{k.label}</p>

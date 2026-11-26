@@ -84,3 +84,18 @@ test("validation du formulaire de commande", () => {
 test("JSON-LD protégé contre l'injection de balise", () => {
   assert.ok(!safeJson({ a: "</script><script>alert(1)</script>" }).includes("</script>"));
 });
+
+test("codes promo : pourcentage, montant, minimum, dates, plafond", async () => {
+  const { promoDiscount, normalizeCode } = await import("../src/lib/promo");
+  const base = { code: "X", kind: "percent" as const, value: 10, min_subtotal_cents: 0, starts_at: null, ends_at: null, max_uses: null, uses: 0, active: true };
+  assert.deepEqual(promoDiscount(base, 12000), { ok: true, discountCents: 1200, label: "−10 %" });
+  const amount = promoDiscount({ ...base, kind: "amount", value: 1500 }, 12000);
+  assert.ok(amount.ok && amount.discountCents === 1500);
+  assert.equal(promoDiscount({ ...base, min_subtotal_cents: 15000 }, 12000).ok, false);
+  assert.equal(promoDiscount({ ...base, active: false }, 12000).ok, false);
+  assert.equal(promoDiscount({ ...base, ends_at: "2000-01-01T00:00:00Z" }, 12000).ok, false);
+  assert.equal(promoDiscount({ ...base, max_uses: 5, uses: 5 }, 12000).ok, false);
+  const capped = promoDiscount({ ...base, kind: "amount", value: 50000 }, 3000);
+  assert.ok(capped.ok && capped.discountCents === 2950, "jamais plus que le panier (0,50 € minimum à payer)");
+  assert.equal(normalizeCode(" bienvenue 10 "), "BIENVENUE10");
+});
